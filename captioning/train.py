@@ -50,7 +50,7 @@ def load_normalize():
         transform=transform,
     )
 
-    train_loader = torch.utils.data.DataLoader(trainset, batch_size=8, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True)
 
     testset = Flickr8kCustom(
         img_dir="./data/Flickr_Data/Flickr_Data/Images",
