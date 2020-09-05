@@ -1,0 +1,5 @@
+*.DS_STORE
+*.iml
+*/data/*
+.idea/*
+*.pyc
