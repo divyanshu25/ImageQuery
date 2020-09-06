@@ -19,6 +19,8 @@ from captioning.config import Config
 from captioning.data_handler.data_loader import get_data_loader
 from captioning.utils import display_image
 from captioning.data_handler.utils import parse_flickr
+import numpy as np
+import torch.utils.data as data
 
 
 def execute():
@@ -28,10 +30,21 @@ def execute():
     # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
     # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
     # print(train_loader.dataset.vocab("ieowoqjf"))
-    counter = Counter(train_loader.dataset.caption_lengths)
-    lengths = sorted(counter.items(), key=lambda pair: pair[1], reverse=True)
-    for value, count in lengths:
-        print('value: %2d --- count: %5d' % (value, count))
+    # counter = Counter(train_loader.dataset.caption_lengths)
+    # lengths = sorted(counter.items(), key=lambda pair: pair[1], reverse=True)
+    # for value, count in lengths:
+    #     print("value: %2d --- count: %5d" % (value, count))
+
+    indices = train_loader.dataset.get_train_indices()
+    print("sampled indices:", indices)
+    new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
+    train_loader.batch_sampler.sampler = new_sampler
+
+    # Obtain the batch.
+    images, captions = next(iter(train_loader))
+
+    print('images.shape:', images.shape)
+    print('captions.shape:', captions.shape)
     # display_image(train_loader)
 
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).

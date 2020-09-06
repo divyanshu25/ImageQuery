@@ -11,7 +11,7 @@ class Config:
     val_id_file = os.path.join(data_dir, "Flickr_TextData/Flickr_8k.devImages.txt")
     test_id_file = os.path.join(data_dir, "Flickr_TextData/Flickr_8k.testImages.txt")
     vocab_file = "/Users/dibu/Gatech Academics/ImageQuery/captioning/data/vocab.pkl"
-    batch_size = 64  # batch size
+    batch_size = 4  # batch size
     vocab_threshold = 2  # minimum word count threshold
     vocab_from_file = True  # if True, load existing vocab file
     embed_size = 300  # dimensionality of image and word embeddings

@@ -20,18 +20,13 @@ class Flickr8kCustom(Dataset):
             target and transforms it.
     """
 
-    def getIds(self, id_file):
-        ids = []
-        with open(id_file, "r") as f:
-            ids = f.read().splitlines()
-        return ids
-
     def __init__(
         self,
         img_dir,
         id_file,
         vocab,
         mode="train",
+        batch_size=1,
         ann_dict=None,
         transform=None,
         target_transform=None,
@@ -39,20 +34,25 @@ class Flickr8kCustom(Dataset):
         super().__init__()
         self.id_file = id_file
         self.img_dir = img_dir
-        self.ids = self.getIds(id_file)
+        self.ids = self.get_ids(id_file)
         self.vocab = vocab
         self.target_transform = target_transform
         self.transform = transform
         self.mode = mode
         self.ann_dict = ann_dict
+        self.batch_size = batch_size
         print("Getting tokens from all captions to generate length...")
         all_tokens = [
-            nltk.tokenize.word_tokenize(
-                str(self.ann_dict[self.ids[index]]).lower()
-            )
+            nltk.tokenize.word_tokenize(str(self.ann_dict[self.ids[index]]).lower())
             for index in tqdm(np.arange(len(self.ids)))
         ]
         self.caption_lengths = [len(token) for token in all_tokens]
+
+    def get_ids(self, id_file):
+        ids = []
+        with open(id_file, "r") as f:
+            ids = f.read().splitlines()
+        return ids
 
     def __getitem__(self, index):
         """
@@ -72,13 +72,14 @@ class Flickr8kCustom(Dataset):
         if self.mode == "train" or self.mode == "val":
             caption = []
             target = self.ann_dict[img_id]
-            target = str(" ".join(target))
-            tokens = nltk.tokenize.word_tokenize(target.lower())
+            tokens = nltk.tokenize.word_tokenize(str(target).lower())
             caption.append(self.vocab(self.vocab.start_word))
             caption.extend([self.vocab(token) for token in tokens])
             caption.append(self.vocab(self.vocab.end_word))
             # caption = caption[:1]
             caption = torch.Tensor(caption).long()
+            if self.transform is not None:
+                img = self.transform(img)
 
             return img, caption
         else:
@@ -88,6 +89,17 @@ class Flickr8kCustom(Dataset):
                 image = self.transform(img)
             # return original image and pre-processed image tensor
             return orig_image, image
+
+    def get_train_indices(self):
+        sel_length = np.random.choice(self.caption_lengths)
+        all_indices = np.where(
+            [
+                self.caption_lengths[i] == sel_length
+                for i in np.arange(len(self.caption_lengths))
+            ]
+        )[0]
+        indices = list(np.random.choice(all_indices, size=self.batch_size))
+        return indices
 
     def __len__(self):
         return len(self.ids)
