@@ -13,79 +13,33 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #  ==================================================================
+from collections import Counter
 
-import torch
-import torchvision
-import torchvision.transforms as transforms
-from captioning.data_loader import Flickr8kCustom
-from captioning.utils import *
-import matplotlib.pyplot as plt
-import numpy as np
-from captioning.decoder import DecoderRNN
-from captioning.encoder import EncoderCNN
-import torch.optim as optim
-import torch.nn as nn
-
-
-def load_normalize():
-    """Load and normalizing the CIFAR10 training and test datasets using torchvision"""
-
-    transform = transforms.Compose(
-        [
-            torchvision.transforms.Resize(256),
-            torchvision.transforms.CenterCrop(224),
-            torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-            ),
-        ]
-    )
-    ann_file = "./data/Flickr_Data/Flickr_Data/Flickr_TextData/Flickr8k.token.txt"
-    annotations = parseAnnotations(ann_file)
-
-    trainset = Flickr8kCustom(
-        img_dir="./data/Flickr_Data/Flickr_Data/Images",
-        annotations=annotations,
-        id_file="./data/Flickr_Data/Flickr_Data/Flickr_TextData/Flickr_8k.trainImages.txt",
-        transform=transform,
-    )
-
-    train_loader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True)
-
-    testset = Flickr8kCustom(
-        img_dir="./data/Flickr_Data/Flickr_Data/Images",
-        annotations=annotations,
-        id_file="./data/Flickr_Data/Flickr_Data/Flickr_TextData/Flickr_8k.testImages.txt",
-        transform=transform,
-    )
-    test_loader = torch.utils.data.DataLoader(
-        trainset, batch_size=4, shuffle=True, num_workers=2
-    )
-
-    valset = Flickr8kCustom(
-        img_dir="./data/Flickr_Data/Flickr_Data/Images",
-        annotations=annotations,
-        id_file="./data/Flickr_Data/Flickr_Data/Flickr_TextData/Flickr_8k.devImages.txt",
-        transform=transform,
-    )
-    val_loader = torch.utils.data.DataLoader(
-        trainset, batch_size=4, shuffle=True, num_workers=2
-    )
-
-    return train_loader, test_loader, val_loader
+from captioning.config import Config
+from captioning.data_handler.data_loader import get_data_loader
+from captioning.utils import display_image
+from captioning.data_handler.utils import parse_flickr
 
 
 def execute():
     # Step1: Load Data
-    train_loader, test_loader, val_loader = load_normalize()
-    display_image(train_loader)
+    flickr_ann_dict = parse_flickr(Config.annotations_file)
+    train_loader = get_data_loader(Config, flickr_ann_dict, mode="train")
+    # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
+    # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
+    # print(train_loader.dataset.vocab("ieowoqjf"))
+    counter = Counter(train_loader.dataset.caption_lengths)
+    lengths = sorted(counter.items(), key=lambda pair: pair[1], reverse=True)
+    for value, count in lengths:
+        print('value: %2d --- count: %5d' % (value, count))
+    # display_image(train_loader)
 
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
-    encoder = EncoderCNN()
-    decoder = DecoderRNN()
+    # encoder = EncoderCNN()
+    # decoder = DecoderRNN()
 
     # Step3: Define Loss Function and optimizer
-    criterion = nn.CrossEntropyLoss()
+    # criterion = nn.CrossEntropyLoss()
     # optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
     # Step4: Train the network.

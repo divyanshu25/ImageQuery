@@ -23,11 +23,13 @@ import torchvision.models as models
 class EncoderCNN(nn.Module):
     def __init__(self, embed_size):
         super(EncoderCNN, self).__init__()
-        resnet = models.googlenet(pretrained=True)
+        resnet = models.resnet50(pretrained=True)
         for param in resnet.parameters():
             param.requires_grad_(False)
 
-        modules = list(resnet.children())[:-1]
+        modules = list(resnet.children())[
+            :-1
+        ]  # take all the layers except the last softmax layer
         self.resnet = nn.Sequential(*modules)
         self.embed = nn.Linear(resnet.fc.in_features, embed_size)
 
@@ -36,33 +38,3 @@ class EncoderCNN(nn.Module):
         features = features.view(features.size(0), -1)
         features = self.embed(features)
         return features
-
-
-# class EncoderCNN(nn.Module):
-#     def __init__(self, embed_size=1024):
-#         super(EncoderCNN, self).__init__()
-#
-#         # get the pretrained densenet model
-#         self.densenet = models.densenet121(pretrained=True)
-#
-#         # replace the classifier with a fully connected embedding layer
-#         self.densenet.classifier = nn.Linear(in_features=1024, out_features=1024)
-#
-#         # add another fully connected layer
-#         self.embed = nn.Linear(in_features=1024, out_features=embed_size)
-#
-#         # dropout layer
-#         self.dropout = nn.Dropout(p=0.5)
-#
-#         # activation layers
-#         self.prelu = nn.PReLU()
-#
-#     def forward(self, images):
-#
-#         # get the embeddings from the densenet
-#         densenet_outputs = self.dropout(self.prelu(self.densenet(images)))
-#
-#         # pass through the fully connected
-#         embeddings = self.embed(densenet_outputs)
-#
-#         return embeddings
