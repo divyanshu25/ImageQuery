@@ -6,7 +6,7 @@ class Config:
 
     data_dir = "./data"
     annotations_file = os.path.join(data_dir, "Flickr8k_text/Flickr8k.token.txt")
-    images_dir = os.path.join(data_dir, "Flicker8k_Dataset")
+    images_dir = os.path.join(data_dir, "Flickr8k_Dataset")
     train_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.trainImages.txt")
     val_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.devImages.txt")
     test_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.testImages.txt")
@@ -22,6 +22,9 @@ class Config:
     save_every = 1  # determines frequency of saving model weights
     print_every = 10  # determines window for printing average loss
     num_workers = 1
+    load_from_file = False
+    learning_rate = 0.001
+    momentum = 0.9
     log_file = (
         "training_log.txt"  # name of file with saved training loss and perplexity
     )

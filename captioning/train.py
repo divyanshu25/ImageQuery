@@ -30,73 +30,46 @@ import sys
 import os
 
 
-def execute():
-    # Step1: Load Data
-    flickr_ann_dict = parse_flickr(Config.annotations_file)
-    train_loader = get_data_loader(Config, flickr_ann_dict, mode="train")
-    val_loader = get_data_loader(Config, flickr_ann_dict, mode="val")
-    vocab_size = len(train_loader.dataset.vocab)
-    # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
-    # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
-    # print(train_loader.dataset.vocab("ieowoqjf"))
-    # counter = Counter(train_loader.dataset.caption_lengths)
-    # lengths = sorted(counter.items(), key=lambda pair: pair[1], reverse=True)
-    # for value, count in lengths:
-    #     print("value: %2d --- count: %5d" % (value, count))
+def validate(val_loader, encoder, decoder, criterion):
+    vocab_size = len(val_loader.dataset.vocab)
+    with torch.no_grad():
+        # set the evaluation mode
+        # encoder.eval()
+        # decoder.eval()
+        val_indices = val_loader.dataset.get_train_indices()
 
-    indices = train_loader.dataset.get_train_indices()
-    print("sampled indices:", indices)
-    new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
-    train_loader.batch_sampler.sampler = new_sampler
+        # Create and assign a batch sampler to retrieve a batch with the sampled indices.
+        val_sampler = data.sampler.SubsetRandomSampler(indices=val_indices)
+        val_loader.batch_sampler.sampler = val_sampler
+        # get the validation images and captions
+        val_images, val_captions = next(iter(val_loader))
 
-    # Obtain the batch.
-    images, captions = next(iter(train_loader))
+        # define the captions
+        # captions_target = val_captions[:, 1:]#.to(device)
+        # captions_train = val_captions[:, : val_captions.shape[1] - 1]#.to(device)
 
-    print('images.shape:', images.shape)
-    print('captions.shape:', captions.shape)
-    # display_image(train_loader)
+        # Move batch of images and captions to GPU if CUDA is available.
+        # val_images = val_images.to(device)
 
-    # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
-    encoder = EncoderCNN(Config.embed_size)
-    decoder = DecoderRNN(Config.embed_size, Config.hidden_size, vocab_size)
+        # Pass the inputs through the CNN-RNN model.
+        features = encoder(val_images)
+        outputs = decoder(features, val_captions)
 
-    # features = encoder(images)
-    #
-    # print('type(features):', type(features))
-    # print('features.shape:', features.shape)
-    #
-    # outputs = decoder(features, captions)
-    #
-    # print('type(outputs):', type(outputs))
-    # print('outputs.shape:', outputs.shape)
-    # Step3: Define Loss Function and optimizer
-    params = list(decoder.parameters()) + list(encoder.embed.parameters())
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(params=params, lr=0.001, momentum=0.9)
-
-    # Step4: Train the network.
-    encoder.load_state_dict(torch.load(Config.encoder_file))
-    decoder.load_state_dict(torch.load(Config.decoder_file))
-
-    train(encoder, decoder, optimizer, criterion, train_loader, val_loader)
-    #
-    # # Step5: Save Model
-    # PATH = "./model/cifar_net.pth"
-    # # torch.save(net.state_dict(), PATH)
-    #
-    # # Step6: Test the net on Test Data
-    # net = Net()
-    # net.load_state_dict(torch.load(PATH))
-    # run_test(test_loader, net, classes
+        # Calculate the batch loss.
+        val_loss = criterion(outputs.view(-1, vocab_size), val_captions.view(-1))
+        return val_loss
 
 
 def train(encoder, decoder, optimizer, criterion, train_loader, val_loader):
     losses = list()
     val_losses = list()
     vocab_size = len(train_loader.dataset.vocab)
-    total_step = math.ceil(len(train_loader.dataset.caption_lengths) / train_loader.batch_sampler.batch_size)
+    total_step = math.ceil(
+        len(train_loader.dataset.caption_lengths)
+        / train_loader.batch_sampler.batch_size
+    )
 
-    for epoch in range(1, Config.num_epochs+1):
+    for epoch in range(1, Config.num_epochs + 1):
 
         for i_step in range(1, total_step + 1):
 
@@ -119,8 +92,8 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader):
             images, captions = next(iter(train_loader))
 
             # make the captions for targets and teacher forcer
-            #captions_target = captions[:, 1:]#.to(device)
-            #captions_train = captions[:, : captions.shape[1] - 1]#.to(device)
+            # captions_target = captions[:, 1:]#.to(device)
+            # captions_train = captions[:, : captions.shape[1] - 1]#.to(device)
 
             # Move batch of images and captions to GPU if CUDA is available.
             # images = images.to(device)
@@ -131,8 +104,9 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader):
 
             # Calculate the batch loss
             loss = criterion(
-                #outputs.view(-1, vocab_size), captions_target.contiguous().view(-1)
-                outputs.view(-1, vocab_size), captions.view(-1)
+                # outputs.view(-1, vocab_size), captions_target.contiguous().view(-1)
+                outputs.view(-1, vocab_size),
+                captions.view(-1),
             )
 
             # Backward pass
@@ -143,34 +117,7 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader):
 
             # - - - Validate - - -
             # turn the evaluation mode on
-            with torch.no_grad():
-
-                # set the evaluation mode
-                # encoder.eval()
-                # decoder.eval()
-                val_indices = val_loader.dataset.get_train_indices()
-
-                # Create and assign a batch sampler to retrieve a batch with the sampled indices.
-                val_sampler = data.sampler.SubsetRandomSampler(indices=val_indices)
-                val_loader.batch_sampler.sampler = val_sampler
-                # get the validation images and captions
-                val_images, val_captions = next(iter(val_loader))
-
-                # define the captions
-                # captions_target = val_captions[:, 1:]#.to(device)
-                # captions_train = val_captions[:, : val_captions.shape[1] - 1]#.to(device)
-
-                # Move batch of images and captions to GPU if CUDA is available.
-                # val_images = val_images.to(device)
-
-                # Pass the inputs through the CNN-RNN model.
-                features = encoder(val_images)
-                outputs = decoder(features, val_captions)
-
-                # Calculate the batch loss.
-                val_loss = criterion(
-                    outputs.view(-1, vocab_size), val_captions.view(-1)
-                )
+            val_loss = validate(val_loader, encoder, decoder, criterion)
 
             # append the validation loss and training loss
             val_losses.append(val_loss.item())
@@ -206,5 +153,4 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader):
             )
 
 
-if __name__ == "__main__":
-    execute()
+
