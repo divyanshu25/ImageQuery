@@ -34,10 +34,11 @@ import os
 
 
 def execute():
-    if Config.do_train:
+    if Config.run_training:
         train_and_validate()
-    if Config.get_prediction:
+    if Config.run_prediction:
         predict()
+
 
 def train_and_validate():
     # Step1: Load Data
@@ -81,7 +82,9 @@ def train_and_validate():
     # Step3: Define Loss Function and optimizer
     params = list(decoder.parameters()) + list(encoder.embed.parameters())
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(params=params, lr=Config.learning_rate, momentum=Config.momentum)
+    optimizer = torch.optim.SGD(
+        params=params, lr=Config.learning_rate, momentum=Config.momentum
+    )
 
     # Step4: Train the network.
     if Config.load_from_file:
@@ -89,7 +92,6 @@ def train_and_validate():
         decoder.load_state_dict(torch.load(Config.decoder_file))
 
     train(encoder, decoder, optimizer, criterion, train_loader, val_loader)
-
 
     #
     # # Step5: Save Model
@@ -101,20 +103,22 @@ def train_and_validate():
     # net.load_state_dict(torch.load(PATH))
     # run_test(test_loader, net, classes
 
+
 def predict():
     flickr_ann_dict = parse_flickr(Config.annotations_file)
     test_loader = get_data_loader(Config, flickr_ann_dict, mode="test")
     vocab_size = len(test_loader.dataset.vocab)
 
-
     encoder = EncoderCNN(Config.embed_size)
+    encoder.eval()
     decoder = DecoderRNN(Config.embed_size, Config.hidden_size, vocab_size)
+    decoder.eval()
 
     encoder.load_state_dict(torch.load(Config.encoder_file))
     decoder.load_state_dict(torch.load(Config.decoder_file))
 
     indices = test_loader.dataset.get_train_indices()
-    print("sampled indices:", indices)
+    # print("sampled indices:", indices)
     new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
     test_loader.batch_sampler.sampler = new_sampler
 

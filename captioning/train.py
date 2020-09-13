@@ -151,6 +151,3 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader):
             torch.save(
                 encoder.state_dict(), os.path.join("./models", "encoder-%d.pth" % epoch)
             )
-
-
-
