@@ -22,6 +22,7 @@ from captioning.data_handler.data_loader import get_data_loader
 from captioning.utils import display_image
 from captioning.data_handler.utils import parse_flickr
 from captioning.train import train
+from captioning.inference import get_predict
 import numpy as np
 import torch.utils.data as data
 
@@ -33,6 +34,12 @@ import os
 
 
 def execute():
+    if Config.do_train:
+        train_and_validate()
+    if Config.get_prediction:
+        predict()
+
+def train_and_validate():
     # Step1: Load Data
     flickr_ann_dict = parse_flickr(Config.annotations_file)
     train_loader = get_data_loader(Config, flickr_ann_dict, mode="train")
@@ -74,16 +81,15 @@ def execute():
     # Step3: Define Loss Function and optimizer
     params = list(decoder.parameters()) + list(encoder.embed.parameters())
     criterion = nn.CrossEntropyLoss()
-    # TODO: add these params to config file
     optimizer = torch.optim.SGD(params=params, lr=Config.learning_rate, momentum=Config.momentum)
 
     # Step4: Train the network.
-    # TODO: Add check for path exist
     if Config.load_from_file:
         encoder.load_state_dict(torch.load(Config.encoder_file))
         decoder.load_state_dict(torch.load(Config.decoder_file))
 
     train(encoder, decoder, optimizer, criterion, train_loader, val_loader)
+
 
     #
     # # Step5: Save Model
@@ -94,6 +100,26 @@ def execute():
     # net = Net()
     # net.load_state_dict(torch.load(PATH))
     # run_test(test_loader, net, classes
+
+def predict():
+    flickr_ann_dict = parse_flickr(Config.annotations_file)
+    test_loader = get_data_loader(Config, flickr_ann_dict, mode="test")
+    vocab_size = len(test_loader.dataset.vocab)
+
+
+    encoder = EncoderCNN(Config.embed_size)
+    decoder = DecoderRNN(Config.embed_size, Config.hidden_size, vocab_size)
+
+    encoder.load_state_dict(torch.load(Config.encoder_file))
+    decoder.load_state_dict(torch.load(Config.decoder_file))
+
+    indices = test_loader.dataset.get_train_indices()
+    print("sampled indices:", indices)
+    new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
+    test_loader.batch_sampler.sampler = new_sampler
+
+    orig_image, image = next(iter(test_loader))
+    get_predict(image, encoder, decoder, test_loader)
 
 
 if __name__ == "__main__":

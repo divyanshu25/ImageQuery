@@ -75,6 +75,7 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
             mode="test",
             batch_size=config.batch_size,
             vocab=vocab,
+            ann_dict=flickr_ann_dict,
             transform=transform,
         )
         data_loader = torch.utils.data.DataLoader(

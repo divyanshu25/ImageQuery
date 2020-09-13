@@ -23,6 +23,8 @@ class Config:
     print_every = 10  # determines window for printing average loss
     num_workers = 1
     load_from_file = False
+    do_train = False
+    get_prediction = True
     learning_rate = 0.001
     momentum = 0.9
     log_file = (
