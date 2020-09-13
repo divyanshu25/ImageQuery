@@ -19,7 +19,7 @@ from captioning.architecture.encoder import EncoderCNN
 from captioning.architecture.decoder import DecoderRNN
 from captioning.config import Config
 from captioning.data_handler.data_loader import get_data_loader
-from captioning.utils import display_image
+from captioning.utils import display_image, imshow
 from captioning.data_handler.utils import parse_flickr
 from captioning.train import train
 from captioning.inference import get_predict
@@ -63,7 +63,7 @@ def train_and_validate():
 
     print("images.shape:", images.shape)
     print("captions.shape:", captions.shape)
-    # display_image(train_loader)
+    display_image(images, captions, train_loader)
 
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
     encoder = EncoderCNN(Config.embed_size)
@@ -106,9 +106,10 @@ def predict():
     test_loader = get_data_loader(Config, flickr_ann_dict, mode="test")
     vocab_size = len(test_loader.dataset.vocab)
 
-
     encoder = EncoderCNN(Config.embed_size)
     decoder = DecoderRNN(Config.embed_size, Config.hidden_size, vocab_size)
+    encoder.eval()
+    decoder.eval()
 
     encoder.load_state_dict(torch.load(Config.encoder_file))
     decoder.load_state_dict(torch.load(Config.decoder_file))
@@ -119,6 +120,7 @@ def predict():
     test_loader.batch_sampler.sampler = new_sampler
 
     orig_image, image = next(iter(test_loader))
+    #imshow(orig_image)
     get_predict(image, encoder, decoder, test_loader)
 
 

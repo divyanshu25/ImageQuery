@@ -20,13 +20,9 @@ def parse_flickr(ann_file):
     with open(ann_file, "r") as f:
         lines = f.read().splitlines()
         for l in lines:
-            tokens = l.split("#")
-            if tokens[0] in ann_dict:
-                ann_dict[tokens[0]].append(tokens[1][2:])
-                pass
-            else:
-                ann_dict[tokens[0]] = [tokens[1][2:]]
+            tokens = l.split("\t", 1)
+            print(tokens)
+            ann_dict[tokens[0]] = tokens[1]
     return ann_dict
-
 
 # print(" ".join("%5s" % classes[labels[j]] for j in range(4)))

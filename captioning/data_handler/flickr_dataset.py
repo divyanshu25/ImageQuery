@@ -50,9 +50,12 @@ class Flickr8kCustom(Dataset):
 
     def get_ids(self, id_file):
         ids = []
+        new_ids = []
         with open(id_file, "r") as f:
             ids = f.read().splitlines()
-        return ids
+        for id in ids:
+            new_ids.extend([id+"#0", id+"#1", id+"#2", id+"#3", id+"#4"])
+        return new_ids
 
     def __getitem__(self, index):
         """
@@ -65,7 +68,7 @@ class Flickr8kCustom(Dataset):
         img_id = self.ids[index]
 
         # Image
-        img_path = os.path.join(self.img_dir, img_id)
+        img_path = os.path.join(self.img_dir, img_id[:-2])
         img = Image.open(img_path).convert("RGB")
 
         # Captions
