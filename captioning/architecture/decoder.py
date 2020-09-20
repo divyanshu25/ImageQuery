@@ -1,5 +1,18 @@
-#  ================================================================
-#  Copyright [2020] [Divyanshu Goyal]
+#   ================================================================
+#   Copyright [2020] [Divyanshu Goyal]
+#  #
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#  #
+#       http://www.apache.org/licenses/LICENSE-2.0
+#  #
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#   ==================================================================
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -44,8 +57,8 @@ class DecoderRNN(nn.Module):
         return out
 
     def sample(self, inputs, states=None, max_len=20):
-        ''' accepts pre-processed image tensor (inputs) and
-        returns predicted sentence (list of tensor ids of length max_len) '''
+        """ accepts pre-processed image tensor (inputs) and
+        returns predicted sentence (list of tensor ids of length max_len) """
         output_sentence = []
         for i in range(max_len):
             lstm_outputs, states = self.lstm(inputs, states)

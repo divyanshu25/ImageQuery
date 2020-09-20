@@ -1,6 +1,20 @@
-import torch
-import torchvision
-import torchvision.transforms as transforms
+#   ================================================================
+#   Copyright [2020] [Divyanshu Goyal]
+#  #
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#  #
+#       http://www.apache.org/licenses/LICENSE-2.0
+#  #
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#   ==================================================================
+
+from config import Config
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -13,14 +27,28 @@ def imshow(img, txt=None):
     plt.show()
 
 
-def display_image(train_loader):
-    data_iter = iter(train_loader)
-    images, labels = data_iter.next()
+def display_image(images, labels, data_loader):
     # for l in labels:
-    #     print(l)
-    for i in range(4):
-        print(labels[i])
-        imshow(images[i], labels[i])
+    # print(l)
+    for i in range(Config.batch_size):
+        desc = clean_sentence(labels[i], data_loader)
+        imshow(images[i], txt=desc)
 
     # show image
     # imshow(torchvision.utils.make_grid(images))
+
+
+def clean_sentence(output, data_loader):
+    output = output.numpy()
+    words_sequence = []
+
+    for i in output:
+        if i == 1:
+            continue
+        words_sequence.append(data_loader.dataset.vocab.idx2word[i])
+
+    words_sequence = words_sequence[1:-1]
+    sentence = " ".join(words_sequence)
+    sentence = sentence.capitalize()
+
+    return sentence

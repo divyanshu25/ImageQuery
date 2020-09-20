@@ -1,8 +1,24 @@
+#   ================================================================
+#   Copyright [2020] [Divyanshu Goyal]
+#  #
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#  #
+#       http://www.apache.org/licenses/LICENSE-2.0
+#  #
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#   ==================================================================
+
 import nltk
 import pickle
 import os.path
 from collections import Counter
-from captioning.data_handler.utils import parse_flickr
+from data_handler.utils import parse_flickr
 
 
 class Vocabulary(object):
@@ -34,11 +50,7 @@ class Vocabulary(object):
         self.unk_word = unk_word
         self.annotations_file = annotations_file
         self.vocab_from_file = vocab_from_file
-        self.get_vocab()
-
-    def get_vocab(self):
-        """Load the vocabulary from file OR build the vocabulary from scratch."""
-        if os.path.exists(self.vocab_file) & self.vocab_from_file:
+        if os.path.exists(self.vocab_file) and self.vocab_from_file:
             with open(self.vocab_file, "rb") as f:
                 vocab = pickle.load(f)
                 self.word2idx = vocab.word2idx

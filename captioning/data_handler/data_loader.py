@@ -1,5 +1,18 @@
-#  ================================================================
-#  Copyright [2020] [Divyanshu Goyal]
+#   ================================================================
+#   Copyright [2020] [Divyanshu Goyal]
+#  #
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#  #
+#       http://www.apache.org/licenses/LICENSE-2.0
+#  #
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#   ==================================================================
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,14 +29,11 @@
 import torch
 import torchvision
 from torch.utils.data import Dataset, DataLoader, sampler
-from pathlib import Path
-from PIL import Image
-import os
-import matplotlib.pyplot as plt
 from torchvision import transforms
-from captioning.data_handler.flickr_dataset import Flickr8kCustom
-from captioning.data_handler.vocabulary import Vocabulary
-from captioning.data_handler.utils import parse_flickr
+
+from config import Config
+from data_handler.flickr_dataset import Flickr8kCustom
+from data_handler.vocabulary import Vocabulary
 
 
 def get_data_loader(config, flickr_ann_dict, mode="train"):
@@ -34,6 +44,7 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
         [
             torchvision.transforms.Resize(256),
             torchvision.transforms.CenterCrop(224),
+            transforms.RandomHorizontalFlip(),
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(
                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
@@ -45,7 +56,7 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
         config.vocab_threshold,
         config.vocab_file,
         config.annotations_file,
-        vocab_from_file=True,
+        vocab_from_file=Config.vocab_from_file,
     )
 
     dataset = None

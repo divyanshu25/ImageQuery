@@ -1,36 +1,31 @@
-#  ================================================================
-#  Copyright [2020] [Divyanshu Goyal]
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-#  ==================================================================
+#   ================================================================
+#   Copyright [2020] [Divyanshu Goyal]
+#  #
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#  #
+#       http://www.apache.org/licenses/LICENSE-2.0
+#  #
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#   ==================================================================
 
 
-from captioning.architecture.encoder import EncoderCNN
-from captioning.architecture.decoder import DecoderRNN
-from captioning.config import Config
-from captioning.data_handler.data_loader import get_data_loader
-from captioning.utils import display_image
-from captioning.data_handler.utils import parse_flickr
-from captioning.train import train
-from captioning.inference import get_predict
-import numpy as np
+from architecture.encoder import EncoderCNN
+from architecture.decoder import DecoderRNN
+from config import Config
+from data_handler.data_loader import get_data_loader
+from data_handler.utils import parse_flickr
+from train import train
+from inference import get_predict
 import torch.utils.data as data
 
 import torch.nn as nn
 import torch
-import math
-import sys
-import os
 
 
 def execute():
@@ -55,20 +50,26 @@ def train_and_validate():
     #     print("value: %2d --- count: %5d" % (value, count))
 
     indices = train_loader.dataset.get_train_indices()
-    print("sampled indices:", indices)
+    # print("sampled indices:", indices)
     new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
     train_loader.batch_sampler.sampler = new_sampler
 
     # Obtain the batch.
-    images, captions = next(iter(train_loader))
-
-    print("images.shape:", images.shape)
-    print("captions.shape:", captions.shape)
-    # display_image(train_loader)
+    # images, captions = next(iter(train_loader))
+    # if Config.enable_cuda:
+    #     images, captions = images.cuda(), captions.cuda()
+    #
+    # print("images.shape:", images.shape)
+    # print("captions.shape:", captions.shape)
+    # display_image(images, captions, train_loader)
 
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     encoder = EncoderCNN(Config.embed_size)
+    encoder = encoder.to(device)
     decoder = DecoderRNN(Config.embed_size, Config.hidden_size, vocab_size)
+    decoder = decoder.to(device)
 
     # features = encoder(images)
     #
@@ -80,8 +81,12 @@ def train_and_validate():
     # print('type(outputs):', type(outputs))
     # print('outputs.shape:', outputs.shape)
     # Step3: Define Loss Function and optimizer
-    params = list(decoder.parameters()) + list(encoder.embed.parameters())
-    criterion = nn.CrossEntropyLoss()
+    params = list(decoder.parameters()) + list(encoder.resnet.fc.parameters())
+    if torch.cuda.is_available():
+        criterion = nn.CrossEntropyLoss().cuda()
+    else:
+        criterion = nn.CrossEntropyLoss()
+
     optimizer = torch.optim.SGD(
         params=params, lr=Config.learning_rate, momentum=Config.momentum
     )
@@ -91,7 +96,7 @@ def train_and_validate():
         encoder.load_state_dict(torch.load(Config.encoder_file))
         decoder.load_state_dict(torch.load(Config.decoder_file))
 
-    train(encoder, decoder, optimizer, criterion, train_loader, val_loader)
+    train(encoder, decoder, optimizer, criterion, train_loader, val_loader, device)
 
     #
     # # Step5: Save Model
@@ -110,8 +115,9 @@ def predict():
     vocab_size = len(test_loader.dataset.vocab)
 
     encoder = EncoderCNN(Config.embed_size)
-    encoder.eval()
     decoder = DecoderRNN(Config.embed_size, Config.hidden_size, vocab_size)
+
+    encoder.eval()
     decoder.eval()
 
     encoder.load_state_dict(torch.load(Config.encoder_file))
@@ -123,6 +129,7 @@ def predict():
     test_loader.batch_sampler.sampler = new_sampler
 
     orig_image, image = next(iter(test_loader))
+    # imshow(orig_image)
     get_predict(image, encoder, decoder, test_loader)
 
 

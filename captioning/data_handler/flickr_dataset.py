@@ -1,11 +1,25 @@
+#   ================================================================
+#   Copyright [2020] [Divyanshu Goyal]
+#  #
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#  #
+#       http://www.apache.org/licenses/LICENSE-2.0
+#  #
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#   ==================================================================
+
 import torch
 from torch.utils.data import Dataset, DataLoader, sampler
-from pathlib import Path
 from PIL import Image
 import os
 import nltk
 import numpy as np
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
@@ -50,9 +64,12 @@ class Flickr8kCustom(Dataset):
 
     def get_ids(self, id_file):
         ids = []
+        new_ids = []
         with open(id_file, "r") as f:
             ids = f.read().splitlines()
-        return ids
+        for id in ids:
+            new_ids.extend([id + "#0", id + "#1", id + "#2", id + "#3", id + "#4"])
+        return new_ids
 
     def __getitem__(self, index):
         """
@@ -65,7 +82,7 @@ class Flickr8kCustom(Dataset):
         img_id = self.ids[index]
 
         # Image
-        img_path = os.path.join(self.img_dir, img_id)
+        img_path = os.path.join(self.img_dir, img_id[:-2])
         img = Image.open(img_path).convert("RGB")
 
         # Captions
