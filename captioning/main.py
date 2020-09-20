@@ -89,7 +89,10 @@ def train_and_validate():
         criterion = nn.CrossEntropyLoss()
 
     optimizer = torch.optim.SGD(
-        params=params, lr=Config.learning_rate, momentum=Config.momentum
+        params=params,
+        lr=Config.learning_rate,
+        momentum=Config.momentum,
+        weight_decay=Config.weight_decay,
     )
 
     # Step4: Train the network.

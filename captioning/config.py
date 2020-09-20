@@ -43,4 +43,5 @@ class Config:
     run_prediction = False
     learning_rate = 0.001
     momentum = 0.9
+    weight_decay = 0.99  # l2 norm strength
     log_file = "training.log"  # name of file with saved training loss and perplexity
