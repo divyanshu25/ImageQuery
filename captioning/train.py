@@ -13,19 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #   ==================================================================
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-#  ==================================================================
+
 import sys
 from collections import Counter
 from config import Config
@@ -36,7 +24,7 @@ import math
 import os
 
 
-def validate(val_loader, encoder, decoder, criterion):
+def validate(val_loader, encoder, decoder, criterion, device):
     vocab_size = len(val_loader.dataset.vocab)
     with torch.no_grad():
         # set the evaluation mode
@@ -49,6 +37,8 @@ def validate(val_loader, encoder, decoder, criterion):
         val_loader.batch_sampler.sampler = val_sampler
         # get the validation images and captions
         val_images, val_captions = next(iter(val_loader))
+        val_images = val_images.to(device)
+        val_captions = val_captions.to(device)
 
         # define the captions
         # captions_target = val_captions[:, 1:]#.to(device)
@@ -124,7 +114,7 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
 
             # - - - Validate - - -
             # turn the evaluation mode on
-            val_loss = validate(val_loader, encoder, decoder, criterion)
+            val_loss = validate(val_loader, encoder, decoder, criterion, device)
             encoder.train()
             decoder.train()
 
