@@ -89,7 +89,6 @@ class Vocabulary(object):
         counter = Counter()
         ids = flickr_dict.keys()
         for i, id in enumerate(ids):
-            # caption = str(" ".join(flickr_dict[id]))
             caption = str(flickr_dict[id])
             tokens = nltk.tokenize.word_tokenize(caption.lower())
             counter.update(tokens)
