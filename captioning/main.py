@@ -41,6 +41,7 @@ def train_and_validate():
     train_loader = get_data_loader(Config, flickr_ann_dict, mode="train")
     val_loader = get_data_loader(Config, flickr_ann_dict, mode="val")
     vocab_size = len(train_loader.dataset.vocab)
+    # print(dict(list(train_loader.dataset.vocab.word2idx.items())[:10]))
     # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
     # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
     # print(train_loader.dataset.vocab("ieowoqjf"))
@@ -114,8 +115,12 @@ def predict():
     test_loader = get_data_loader(Config, flickr_ann_dict, mode="test")
     vocab_size = len(test_loader.dataset.vocab)
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     encoder = EncoderCNN(Config.embed_size)
+    encoder = encoder.to(device)
     decoder = DecoderRNN(Config.embed_size, Config.hidden_size, vocab_size)
+    decoder = decoder.to(device)
 
     encoder.eval()
     decoder.eval()
@@ -129,6 +134,7 @@ def predict():
     test_loader.batch_sampler.sampler = new_sampler
 
     orig_image, image = next(iter(test_loader))
+    image = image.to(device)
     # imshow(orig_image)
     get_predict(image, encoder, decoder, test_loader)
 

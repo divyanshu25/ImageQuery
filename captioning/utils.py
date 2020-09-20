@@ -41,10 +41,7 @@ def display_image(images, labels, data_loader):
 def clean_sentence(output, data_loader):
     output = output.numpy()
     words_sequence = []
-
     for i in output:
-        if i == 1:
-            continue
         words_sequence.append(data_loader.dataset.vocab.idx2word[i])
 
     words_sequence = words_sequence[1:-1]

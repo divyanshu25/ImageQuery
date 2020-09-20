@@ -1,8 +1,0 @@
-True
-Vocabulary successfully loaded from vocab.pkl file!
-Getting tokens from all captions to generate length...
-True
-Vocabulary successfully loaded from vocab.pkl file!
-Getting tokens from all captions to generate length...
-Epoch [1/100], Step [10/30000], Train Loss: 3.6457, Val Loss: 3.5601
-Epoch [1/100], Step [20/30000], Train Loss: 3.2817, Val Loss: 3.4016

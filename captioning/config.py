@@ -43,5 +43,4 @@ class Config:
     run_prediction = False
     learning_rate = 0.001
     momentum = 0.9
-    enable_cuda = False
     log_file = "training.log"  # name of file with saved training loss and perplexity

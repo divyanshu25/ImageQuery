@@ -26,5 +26,4 @@ def get_predict(image, encoder, decoder, test_loader):
     output = decoder.sample(features)
     sentence = clean_sentence(output, test_loader)
     print(sentence)
-
     imshow(image[0])
