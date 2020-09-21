@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python -u main.py | tee training.log
+python -u main.py | tee -a training.log

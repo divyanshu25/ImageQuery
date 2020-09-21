@@ -87,7 +87,7 @@ def train_and_validate():
         criterion = nn.CrossEntropyLoss().cuda()
     else:
         criterion = nn.CrossEntropyLoss()
-
+    # optimizer = torch.optim.RMSprop()
     optimizer = torch.optim.SGD(
         params=params,
         lr=Config.learning_rate,
@@ -127,19 +127,26 @@ def predict():
 
     encoder.eval()
     decoder.eval()
-
-    encoder.load_state_dict(torch.load(Config.encoder_file))
-    decoder.load_state_dict(torch.load(Config.decoder_file))
+    if not torch.cuda.is_available():
+        encoder.load_state_dict(
+            torch.load(Config.encoder_file, map_location=torch.device("cpu"))
+        )
+        decoder.load_state_dict(
+            torch.load(Config.decoder_file, map_location=torch.device("cpu"))
+        )
+    else:
+        encoder.load_state_dict(torch.load(Config.encoder_file))
+        decoder.load_state_dict(torch.load(Config.decoder_file))
 
     indices = test_loader.dataset.get_train_indices()
     # print("sampled indices:", indices)
     new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
     test_loader.batch_sampler.sampler = new_sampler
 
-    orig_image, image = next(iter(test_loader))
-    image = image.to(device)
+    images, captions = next(iter(test_loader))
+    images = images.to(device)
     # imshow(orig_image)
-    get_predict(image, encoder, decoder, test_loader)
+    get_predict(images, captions, encoder, decoder, test_loader)
 
 
 if __name__ == "__main__":

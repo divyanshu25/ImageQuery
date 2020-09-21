@@ -100,14 +100,16 @@ class Flickr8kCustom(Dataset):
 
             return img, caption
         else:
-            orig_image = np.array(img)
-            image = orig_image.copy()
+            image = np.array(img)
+            caption = self.ann_dict[img_id]
+            # image = orig_image.copy()
             if self.transform is not None:
                 image = self.transform(img)
             # return original image and pre-processed image tensor
-            return orig_image, image
+            return image, caption
 
     def get_train_indices(self):
+        # print(len(self.caption_lengths))
         sel_length = np.random.choice(self.caption_lengths)
         all_indices = np.where(
             [
