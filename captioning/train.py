@@ -74,7 +74,7 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
 
     encoder.train()
     decoder.train()
-    for epoch in range(1, Config.num_epochs + 1):
+    for epoch in Config.epoch_range:
 
         for i_step in range(1, total_step + 1):
 
@@ -135,7 +135,7 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
             # Get training statistics.
             stats = "Epoch [%d/%d], Step [%d/%d], Train Loss: %.4f, Val Loss: %.4f" % (
                 epoch,
-                Config.num_epochs,
+                Config.epoch_range[-1],
                 i_step,
                 total_step,
                 loss.item(),
@@ -144,7 +144,7 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
 
             if i_step % Config.print_every == 0:
                 print(stats)
-                wandb.log({"train_loss": loss.item(),"val_loss": val_loss.item()})
+                wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
                 # sys.stdout.flush()
                 # f.write(stats + "\n")
                 # f.flush()

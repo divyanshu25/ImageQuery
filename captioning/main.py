@@ -87,13 +87,13 @@ def train_and_validate():
         criterion = nn.CrossEntropyLoss().cuda()
     else:
         criterion = nn.CrossEntropyLoss()
-    # optimizer = torch.optim.RMSprop()
-    optimizer = torch.optim.SGD(
-        params=params,
-        lr=Config.learning_rate,
-        momentum=Config.momentum,
-        weight_decay=Config.weight_decay,
-    )
+    optimizer = torch.optim.Adam(params=params, lr=Config.learning_rate)
+    # optimizer = torch.optim.SGD(
+    #     params=params,
+    #     lr=Config.learning_rate,
+    #     momentum=Config.momentum,
+    #     weight_decay=Config.weight_decay,
+    # )
 
     # Step4: Train the network.
     if Config.load_from_file:

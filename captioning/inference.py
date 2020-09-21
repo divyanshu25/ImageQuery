@@ -21,7 +21,7 @@ from utils import imshow, clean_sentence
 
 def get_predict(images, captions, encoder, decoder, test_loader):
     # image = image.to(device)
-    print(images.shape)
+    # print(images.shape)
     for i in range(images.shape[0]):
         image = images[i].unsqueeze(0)
         print(image.shape)
