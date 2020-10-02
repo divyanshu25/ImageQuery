@@ -17,18 +17,21 @@
 import os
 
 
-class Config:
+class CaptioningConfig:
     """Base config."""
 
     data_dir = "data"
-    annotations_file = os.path.join(data_dir, "Flickr8k_text/Flickr8k.token.txt")
+    dummy_annotations_file = os.path.join(
+        "captioning", data_dir, "Flickr8k_text/Flickr8k_dummy.token.txt"
+    )
+    annotations_file = os.path.join("captioning", data_dir, "Flickr8k_text/Flickr8k.token.txt")
     images_dir = os.path.join(data_dir, "Flickr8k_Dataset")
     train_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.trainImages.txt")
     val_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.devImages.txt")
     test_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.testImages.txt")
     vocab_file = "data/vocab.pkl"
-    encoder_file = "models/encoder-4.pth"
-    decoder_file = "models/decoder-4.pth"
+    encoder_file = "models/encoder-7.pth"
+    decoder_file = "models/decoder-7.pth"
     batch_size = 8  # batch size
     vocab_threshold = 5  # minimum word count threshold
     vocab_from_file = True  # if True, load existing vocab file
@@ -39,8 +42,8 @@ class Config:
     print_every = 10  # determines window for printing average loss
     num_workers = 2
     load_from_file = False
-    run_training = True
-    run_prediction = False
+    run_training = False
+    run_prediction = True
     learning_rate = 0.001
     momentum = 0.9
     weight_decay = 0.99  # l2 norm strength

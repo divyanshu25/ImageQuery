@@ -1,0 +1,88 @@
+
+Vocabulary successfully loaded from vocab.pkl file!
+Getting tokens from all captions to generate length...
+Vocabulary successfully loaded from vocab.pkl file!
+Getting tokens from all captions to generate length...
+Epoch [1/1], Step [10/7500], Train Loss: 8.0241, Val Loss: 8.0054
+
+Vocabulary successfully loaded from vocab.pkl file!
+Getting tokens from all captions to generate length...
+Vocabulary successfully loaded from vocab.pkl file!
+Getting tokens from all captions to generate length...
+
+Vocabulary successfully loaded from vocab.pkl file!
+Getting tokens from all captions to generate length...
+torch.Size([4, 3, 224, 224])
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A man in a <unk> . <end> <end> . <end> <end> <end> . <end> <end> <end> . <end>
+Original Caption: A boy with a backpack sits on a trail and points .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A man in a <unk> . <end> <end> . <end> <end> <end> . <end> <end> <end> . <end>
+Original Caption: A dog chases a deer on a field with yellow flowers .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A man in a <unk> . <end> <end> . <end> <end> <end> . <end> <end> <end> . <end>
+Original Caption: A person in a blue sweatshirt is doing a back bend .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A man in a <unk> . <end> <end> . <end> <end> <end> . <end> <end> <end> . <end>
+Original Caption: A person is wading through a river near an eroded embankment .
+
+
+Vocabulary successfully loaded from vocab.pkl file!
+Getting tokens from all captions to generate length...
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A man in a blue shirt and jeans is standing on a sidewalk . <end> <end> . <end>
+Original Caption: Two children standing in the grass being sprayed by a hose .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A man in a blue shirt and jeans is riding a bike . <end> <end> . <end> <end>
+Original Caption: A motorcyclist rides down a ramp held up by colorful barrels .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: Two dogs running in the grass . <end> <end> . <end> <end> . <end> <end> . <end> <end>
+Original Caption: Two large dogs are fighting with teeth bared near some trees .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A dog running on the grass . <end> <end> . <end> <end> . <end> <end> . <end> <end>
+Original Caption: A brown puppy is laying on its back in the grass .
+
+
+Vocabulary successfully loaded from vocab.pkl file!
+Getting tokens from all captions to generate length...
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A boy in a blue shirt and jeans is standing in front of a large building . <end>
+Original Caption: A young child covered with white powder .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A person in a red shirt is riding a bike in the air . <end> . <end> <end>
+Original Caption: A surfer is 90 degrees to the water
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A man in a blue shirt and a black hat and a black jacket . <end> <end> .
+Original Caption: Man spraying water into boxer 's mouth .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: Two people are sitting on a bench . <end> <end> . <end> <end> . <end> <end> . <end>
+Original Caption: Dogs and people play in a pool .
+
+
+Vocabulary successfully loaded from vocab.pkl file!
+Getting tokens from all captions to generate length...
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A dog runs through the snow . <end> <end> . <end> <end> . <end> <end> . <end> <end>
+Original Caption: The dog stands in the sand near the ocean .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A black dog is running on grass . <end> <end> . <end> <end> . <end> <end> <end> .
+Original Caption: Two dogs wearing shirts play in the green grass .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A boy in a blue shirt is jumping into a pool . <end> <end> . <end> <end> .
+Original Caption: An adult smiles with a child on a swing .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A man and a woman are standing in front of a large rock formation . <end> <end> .
+Original Caption: A woman in a skirt walks down a path .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A boy in a blue shirt is standing in a pool . <end> <end> . <end> . <end>
+Original Caption: The boy laughed as he swam in the pool .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A black and white dog is running through a field . <end> <end> . <end> <end> . <end>
+Original Caption: A black and white dog jumping in a yard .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A white dog is running through a field of flowers . <end> <end> . <end> <end> . <end>
+Original Caption: A dog jumps over a red and blue hurdle .
+torch.Size([1, 3, 224, 224])
+Predicted Caption: A boy runs through a field . <end> <end> . <end> <end> . <end> <end> . <end> <end>
+Original Caption: Two boys kick around a ball in a meadow .
+
