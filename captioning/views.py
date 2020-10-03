@@ -19,6 +19,7 @@ from flask_apispec import MethodResource as Resource
 from schema import PopulateImageSchema
 from captioning.captioning_config import CaptioningConfig
 from models import ImageCaptions, db
+from bert import bert_encoder
 import os
 
 @doc(
@@ -30,18 +31,20 @@ class PopulateImageData(Resource):
     @marshal_with(PopulateImageSchema, code=200)
     def get(self, **kwargs):
         print(os.getcwd())
-        data_file = CaptioningConfig.annotations_file
+        data_file = CaptioningConfig.dummy_annotations_file
         try:
             with open(data_file, "r") as f:
                 for l in f.readlines():
                     tokens = l.split("#")
                     image_id = tokens[0]
                     caption = tokens[1][2:]
+                    encoded_caption = bert_encoder.get_bert_enoding(caption)
                     caption_index = int(tokens[1][0])
                     captions_obj = ImageCaptions(
                         image_path=image_id,
                         caption_index=caption_index,
                         caption=caption,
+                        encoded_caption=encoded_caption
                     )
                     db.session.add(captions_obj)
                     db.session.commit()
