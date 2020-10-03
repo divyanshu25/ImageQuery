@@ -13,17 +13,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #   ==================================================================
+from transformers import BertTokenizer
 
-from image_query_app import db
 
+def get_bert_enoding(text):
 
-class ImageCaptions(db.Model):
-    """Data model for Image captions."""
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    # text = "[CLS] " + text + " [SEP]"
+    tokenized_text = tokenizer.tokenize(text)
+    indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+    return str(indexed_tokens)
 
-    __tablename__ = "ImageCaptions"
-    image_path = db.Column(db.String(64), primary_key=True, index=True, unique=False, nullable=False)
-    caption_index = db.Column(db.Integer, primary_key=True, nullable=False)
-    set = db.Column(db.String(64), index=True, unique=False, nullable=True)
-    # index 5 is the generated caption
-    caption = db.Column(db.String(1024), index=False, unique=False, nullable=True)
-    encoded_caption = db.Column(db.String(1024), index=False, unique=False, nullable=True)
