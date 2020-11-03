@@ -15,6 +15,8 @@
 #   ==================================================================
 
 import nltk
+
+nltk.download("punkt")
 import pickle
 import os.path
 from collections import Counter

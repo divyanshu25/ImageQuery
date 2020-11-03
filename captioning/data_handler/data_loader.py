@@ -19,7 +19,7 @@ import torchvision
 from torch.utils.data import Dataset, DataLoader, sampler
 from torchvision import transforms
 
-from config import Config
+from captioning_config import CaptioningConfig as Config
 from data_handler.flickr_dataset import Flickr8kCustom
 from data_handler.vocabulary import Vocabulary
 

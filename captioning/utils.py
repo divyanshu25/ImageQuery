@@ -14,7 +14,7 @@
 #   limitations under the License.
 #   ==================================================================
 
-from config import Config
+from captioning_config import CaptioningConfig as Config
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -42,6 +42,7 @@ def clean_sentence(output, data_loader):
     # output = output.numpy()
     words_sequence = []
     for i in output:
+        i = i.item()
         words_sequence.append(data_loader.dataset.vocab.idx2word[i])
 
     words_sequence = words_sequence[1:-1]

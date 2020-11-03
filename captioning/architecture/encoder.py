@@ -28,12 +28,6 @@ class EncoderCNN(nn.Module):
             param.requires_grad_(False)
         self.resnet.fc = nn.Linear(self.resnet.fc.in_features, embed_size)
 
-        # modules = list(resnet.children())[
-        #     :-1
-        # ]  # take all the layers except the last softmax layer
-        # self.resnet = nn.Sequential(*modules)
-        # self.embed = nn.Linear(resnet.fc.in_features, embed_size)
-
     def forward(self, images):
         features = self.resnet(images)
         # features = features.view(features.size(0), -1)

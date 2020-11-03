@@ -16,11 +16,12 @@
 from flask import make_response
 from flask_apispec import marshal_with, doc, use_kwargs
 from flask_apispec import MethodResource as Resource
-from schema import PopulateImageSchema
+from captioning.schema import PopulateImageSchema
 from captioning.captioning_config import CaptioningConfig
 from models import ImageCaptions, db
 from bert import bert_encoder
 import os
+
 
 @doc(
     summary="Load image captions",
@@ -44,7 +45,7 @@ class PopulateImageData(Resource):
                         image_path=image_id,
                         caption_index=caption_index,
                         caption=caption,
-                        encoded_caption=encoded_caption
+                        encoded_caption=encoded_caption,
                     )
                     db.session.add(captions_obj)
                     db.session.commit()
