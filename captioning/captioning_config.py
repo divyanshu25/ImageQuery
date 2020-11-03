@@ -15,12 +15,12 @@
 #   ==================================================================
 
 import os
-
+from config import ROOT_DIR
 
 class CaptioningConfig:
     """Base config."""
 
-    data_dir = "data"
+    data_dir = os.path.join(ROOT_DIR, "captioning/data")
     dummy_annotations_file = os.path.join(
         data_dir, "Flickr8k_text/Flickr8k_dummy.token.txt"
     )
