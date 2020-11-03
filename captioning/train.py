@@ -16,15 +16,16 @@
 
 import sys
 from collections import Counter
-from config import Config
+from captioning_config import CaptioningConfig as Config
 import numpy as np
 import torch.utils.data as data
 import torch
 import math
 import os
-import wandb
 
-wandb.init(project="test_ImageQuery")
+# import wandb
+#
+# wandb.init(project="test_ImageQuery")
 
 
 def validate(val_loader, encoder, decoder, criterion, device):
@@ -64,14 +65,13 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
     losses = list()
     val_losses = list()
     vocab_size = len(train_loader.dataset.vocab)
+
     total_step = math.ceil(
-        len(train_loader.dataset.caption_lengths)
-        / train_loader.batch_sampler.batch_size
+        len(train_loader.dataset) / train_loader.batch_sampler.batch_size
     )
     # set decoder and encoder into train mode
-    wandb.watch(encoder)
-    wandb.watch(decoder)
-
+    # wandb.watch(encoder)
+    # wandb.watch(decoder)
     encoder.train()
     decoder.train()
     for epoch in Config.epoch_range:
@@ -92,24 +92,21 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
             # Obtain the batch.
             images, captions = next(iter(train_loader))
             images = images.to(device)
-            captions = captions.to(device)
+            captions = captions
 
             # make the captions for targets and teacher forcer
-            # captions_target = captions[:, 1:]#.to(device)
-            # captions_train = captions[:, : captions.shape[1] - 1]#.to(device)
-
-            # Move batch of images and captions to GPU if CUDA is available.
-            # images = images.to(device)
+            captions_train = captions[:, :-1].to(device)
+            captions_target = captions[:, 1:].to(device)
 
             # Pass the inputs through the CNN-RNN model.
             features = encoder(images)
-            outputs = decoder(features, captions)
-
+            # print(features.shape)
+            outputs = decoder(features, captions_train)
             # Calculate the batch loss
             loss = criterion(
                 # outputs.view(-1, vocab_size), captions_target.contiguous().view(-1)
                 outputs.view(-1, vocab_size),
-                captions.view(-1),
+                captions_target.reshape(-1),
             )
 
             # Backward pass
@@ -144,7 +141,7 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
 
             if i_step % Config.print_every == 0:
                 print(stats)
-                wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
+                # wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
                 # sys.stdout.flush()
                 # f.write(stats + "\n")
                 # f.flush()

@@ -13,81 +13,84 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #   ==================================================================
-
+from collections import Counter
 
 from architecture.encoder import EncoderCNN
 from architecture.decoder import DecoderRNN
-from config import Config
+from captioning.captioning_config import CaptioningConfig
 from data_handler.data_loader import get_data_loader
 from data_handler.utils import parse_flickr
 from train import train
 from inference import get_predict
 import torch.utils.data as data
+import pprint
 
 import torch.nn as nn
 import torch
 
+from utils import display_image
+
 
 def execute():
-    if Config.run_training:
+    if CaptioningConfig.run_training:
         train_and_validate()
-    if Config.run_prediction:
+    if CaptioningConfig.run_prediction:
         predict()
 
 
-def train_and_validate():
-    # Step1: Load Data
-    flickr_ann_dict = parse_flickr(Config.annotations_file)
-    train_loader = get_data_loader(Config, flickr_ann_dict, mode="train")
-    val_loader = get_data_loader(Config, flickr_ann_dict, mode="val")
-    vocab_size = len(train_loader.dataset.vocab)
+def get_device():
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def print_stats(train_loader, val_loader):
+    print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
+    print("Total number of data points in train set:", len(train_loader.dataset))
+    print("Total number of data points in val set:", len(val_loader.dataset))
+
     # print(dict(list(train_loader.dataset.vocab.word2idx.items())[:10]))
-    # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
-    # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
-    # print(train_loader.dataset.vocab("ieowoqjf"))
     # counter = Counter(train_loader.dataset.caption_lengths)
     # lengths = sorted(counter.items(), key=lambda pair: pair[1], reverse=True)
     # for value, count in lengths:
     #     print("value: %2d --- count: %5d" % (value, count))
-
-    indices = train_loader.dataset.get_train_indices()
-    # print("sampled indices:", indices)
-    new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
-    train_loader.batch_sampler.sampler = new_sampler
-
-    # Obtain the batch.
+    # indices = train_loader.dataset.get_train_indices()
+    # # print("sampled indices:", indices)
+    # new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
+    # train_loader.batch_sampler.sampler = new_sampler
+    #
+    # # Obtain the batch.
     # images, captions = next(iter(train_loader))
-    # if Config.enable_cuda:
-    #     images, captions = images.cuda(), captions.cuda()
+    #
+    # images, captions = images.to(device), captions.to(device)
     #
     # print("images.shape:", images.shape)
     # print("captions.shape:", captions.shape)
     # display_image(images, captions, train_loader)
+    #
+    return
+
+
+def train_and_validate():
+    # Step1: Load Data and Visulaize
+    device = get_device()
+    flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
+    train_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="train")
+    val_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="val")
+    vocab_size = len(train_loader.dataset.vocab)
+    # print_stats(train_loader, val_loader)
 
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    encoder = EncoderCNN(Config.embed_size)
+    encoder = EncoderCNN(CaptioningConfig.embed_size)
     encoder = encoder.to(device)
-    decoder = DecoderRNN(Config.embed_size, Config.hidden_size, vocab_size)
+    decoder = DecoderRNN(
+        CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size
+    )
     decoder = decoder.to(device)
 
-    # features = encoder(images)
-    #
-    # print('type(features):', type(features))
-    # print('features.shape:', features.shape)
-    #
-    # outputs = decoder(features, captions)
-    #
-    # print('type(outputs):', type(outputs))
-    # print('outputs.shape:', outputs.shape)
     # Step3: Define Loss Function and optimizer
     params = list(decoder.parameters()) + list(encoder.resnet.fc.parameters())
-    if torch.cuda.is_available():
-        criterion = nn.CrossEntropyLoss().cuda()
-    else:
-        criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(params=params, lr=Config.learning_rate)
+    criterion = nn.CrossEntropyLoss()
+
+    optimizer = torch.optim.Adam(params=params, lr=CaptioningConfig.learning_rate)
     # optimizer = torch.optim.SGD(
     #     params=params,
     #     lr=Config.learning_rate,
@@ -96,47 +99,39 @@ def train_and_validate():
     # )
 
     # Step4: Train the network.
-    if Config.load_from_file:
-        encoder.load_state_dict(torch.load(Config.encoder_file))
-        decoder.load_state_dict(torch.load(Config.decoder_file))
+    if CaptioningConfig.load_from_file:
+        encoder.load_state_dict(torch.load(CaptioningConfig.encoder_file))
+        decoder.load_state_dict(torch.load(CaptioningConfig.decoder_file))
 
     train(encoder, decoder, optimizer, criterion, train_loader, val_loader, device)
 
-    #
-    # # Step5: Save Model
-    # PATH = "./model/cifar_net.pth"
-    # # torch.save(net.state_dict(), PATH)
-    #
-    # # Step6: Test the net on Test Data
-    # net = Net()
-    # net.load_state_dict(torch.load(PATH))
-    # run_test(test_loader, net, classes
-
 
 def predict():
-    flickr_ann_dict = parse_flickr(Config.annotations_file)
-    test_loader = get_data_loader(Config, flickr_ann_dict, mode="test")
+    flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
+    test_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="test")
     vocab_size = len(test_loader.dataset.vocab)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    encoder = EncoderCNN(Config.embed_size)
+    encoder = EncoderCNN(CaptioningConfig.embed_size)
     encoder = encoder.to(device)
-    decoder = DecoderRNN(Config.embed_size, Config.hidden_size, vocab_size)
+    decoder = DecoderRNN(
+        CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size
+    )
     decoder = decoder.to(device)
 
     encoder.eval()
     decoder.eval()
     if not torch.cuda.is_available():
         encoder.load_state_dict(
-            torch.load(Config.encoder_file, map_location=torch.device("cpu"))
+            torch.load(CaptioningConfig.encoder_file, map_location=torch.device("cpu"))
         )
         decoder.load_state_dict(
-            torch.load(Config.decoder_file, map_location=torch.device("cpu"))
+            torch.load(CaptioningConfig.decoder_file, map_location=torch.device("cpu"))
         )
     else:
-        encoder.load_state_dict(torch.load(Config.encoder_file))
-        decoder.load_state_dict(torch.load(Config.decoder_file))
+        encoder.load_state_dict(torch.load(CaptioningConfig.encoder_file))
+        decoder.load_state_dict(torch.load(CaptioningConfig.decoder_file))
 
     indices = test_loader.dataset.get_train_indices()
     # print("sampled indices:", indices)
