@@ -1,5 +1,5 @@
 #   ================================================================
-#   Copyright [2020] [Divyanshu Goyal]
+#   Copyright [2020] [Image Query Team]
 #  #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ class CaptioningConfig:
     train_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.trainImages.txt")
     val_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.devImages.txt")
     test_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.testImages.txt")
-    vocab_file = "data/vocab.pkl"
+    vocab_file = os.path.join(data_dir, "vocab.pkl")
     encoder_file = "models/encoder-7.pth"
     decoder_file = "models/decoder-7.pth"
     batch_size = 8  # batch size
