@@ -41,8 +41,9 @@ def validate(val_loader, encoder, decoder, criterion, device):
         val_loader.batch_sampler.sampler = val_sampler
         # get the validation images and captions
         val_images, val_captions = next(iter(val_loader))
-        val_images = val_images.to(device)
-        val_captions = val_captions.to(device)
+        if device:
+            val_images = val_images.cuda()
+            val_captions = val_captions.cuda()
 
         # define the captions
         # captions_target = val_captions[:, 1:]#.to(device)
@@ -94,8 +95,9 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
 
             # Obtain the batch.
             images, captions = next(iter(train_loader))
-            images = images.to(device)
-            captions = captions.to(device)
+            if device:
+                images = images.cuda()
+                captions = captions.cuda()
 
             # make the captions for targets and teacher forcer
             # captions_train = captions[:, :-1].to(device)

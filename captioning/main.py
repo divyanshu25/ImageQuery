@@ -39,7 +39,7 @@ def execute():
 
 
 def get_device():
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return torch.cuda.is_available()
 
 
 def print_stats(train_loader, val_loader):
@@ -80,11 +80,12 @@ def train_and_validate():
 
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
     encoder = EncoderCNN(CaptioningConfig.embed_size)
-    encoder = encoder.to(device)
     decoder = DecoderRNN(
         CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size
     )
-    decoder = decoder.to(device)
+    if device:
+        encoder = encoder.cuda()
+        decoder = decoder.cuda()
 
     # Step3: Define Loss Function and optimizer
     params = list(decoder.parameters()) + list(encoder.resnet.fc.parameters())
@@ -114,11 +115,12 @@ def predict():
     device = get_device()
 
     encoder = EncoderCNN(CaptioningConfig.embed_size)
-    encoder = encoder.to(device)
     decoder = DecoderRNN(
         CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size
     )
-    decoder = decoder.to(device)
+    if device:
+        encoder = encoder.cuda()
+        decoder = decoder.cuda()
 
     encoder.eval()
     decoder.eval()
@@ -138,7 +140,8 @@ def predict():
     test_loader.batch_sampler.sampler = new_sampler
 
     images, captions = next(iter(test_loader))
-    images = images.to(device)
+    if device:
+        images = images.cuda()
     # imshow(orig_image)
     get_predict(images, captions, encoder, decoder, test_loader)
 
