@@ -35,9 +35,10 @@ class DecoderRNN(nn.Module):
         )
 
         self.linear = nn.Linear(hidden_size, vocab_size)
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, features, captions):
-        captions = captions[:, 1:]
+        captions = captions[:, :-1]
         # print(captions.shape)
         embed = self.embedding_layer(captions)
         # print(embed.shape)
@@ -57,8 +58,11 @@ class DecoderRNN(nn.Module):
             lstm_outputs, states = self.lstm(inputs, states)
             lstm_outputs = lstm_outputs.squeeze(1)
             out = self.linear(lstm_outputs)
+            out = self.softmax(out)
             last_pick = out.max(1)[1]
             output_sentence.append(last_pick.item())
+            if last_pick.item() == 1:
+                break
             inputs = self.embedding_layer(last_pick).unsqueeze(1)
 
         return output_sentence

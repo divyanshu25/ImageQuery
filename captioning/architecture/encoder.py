@@ -27,6 +27,7 @@ class EncoderCNN(nn.Module):
         for param in self.resnet.parameters():
             param.requires_grad_(False)
         self.resnet.fc = nn.Linear(self.resnet.fc.in_features, embed_size)
+        self.resnet.fc.requires_grad_(True)
 
     def forward(self, images):
         features = self.resnet(images)
