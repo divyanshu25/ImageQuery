@@ -22,6 +22,7 @@ class CaptioningConfig:
     """Base config."""
 
     data_dir = os.path.join(ROOT_DIR, "captioning/data")
+    models_dir = os.path.join(ROOT_DIR, "captioning/models")
     dummy_annotations_file = os.path.join(
         data_dir, "Flickr8k_text/Flickr8k_dummy.token.txt"
     )
@@ -33,7 +34,7 @@ class CaptioningConfig:
     vocab_file = os.path.join(data_dir, "vocab.pkl")
     encoder_file = "models/encoder-7.pth"
     decoder_file = "models/decoder-7.pth"
-    batch_size = 8  # batch size
+    batch_size = 256  # batch size
     vocab_threshold = 5  # minimum word count threshold
     vocab_from_file = True  # if True, load existing vocab file
     embed_size = 300  # dimensionality of image and word embeddings

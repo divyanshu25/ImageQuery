@@ -127,8 +127,8 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
             # - - - Validate - - -
             # turn the evaluation mode on
             val_loss = validate(val_loader, encoder, decoder, criterion, device)
-            # encoder.train()
-            # decoder.train()
+            encoder.train()
+            decoder.train()
 
             # append the validation loss and training loss
             val_losses.append(val_loss.item())
@@ -158,10 +158,10 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
         if epoch % Config.save_every == 0:
             print("\nSaving the model")
             torch.save(
-                decoder.state_dict(), os.path.join("./models", "decoder-%d.pth" % epoch)
+                decoder.state_dict(), os.path.join(Config.models_dir, "decoder-%d.pth" % epoch)
             )
             torch.save(
-                encoder.state_dict(), os.path.join("./models", "encoder-%d.pth" % epoch)
+                encoder.state_dict(), os.path.join(Config.models_dir, "encoder-%d.pth" % epoch)
             )
         exp_lr_scheduler.step()
     # f.close()
