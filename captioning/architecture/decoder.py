@@ -35,12 +35,16 @@ class DecoderRNN(nn.Module):
         self.linear = nn.Linear(hidden_size, vocab_size)
 
     def forward(self, features, captions):
-
+        captions = captions[:, 1:]
+        # print(captions.shape)
         embed = self.embedding_layer(captions)
+        # print(embed.shape)
         embed = torch.cat((features.unsqueeze(1), embed), dim=1)
+        # print(embed.shape)
         lstm_outputs, _ = self.lstm(embed)
+        # print(lstm_outputs.shape)
         out = self.linear(lstm_outputs)
-
+        # print(out.shape)
         return out
 
     def sample(self, inputs, states=None, max_len=20):

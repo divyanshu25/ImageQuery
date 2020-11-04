@@ -17,6 +17,7 @@
 import os
 from config import ROOT_DIR
 
+
 class CaptioningConfig:
     """Base config."""
 
@@ -37,7 +38,7 @@ class CaptioningConfig:
     vocab_from_file = True  # if True, load existing vocab file
     embed_size = 300  # dimensionality of image and word embeddings
     hidden_size = 512  # number of features in hidden state of the RNN decoder
-    epoch_range = range(10, 20)  # number of training epochs
+    epoch_range = range(1, 20)  # number of training epochs
     save_every = 1  # determines frequency of saving model weights
     print_every = 10  # determines window for printing average loss
     num_workers = 2
@@ -45,6 +46,7 @@ class CaptioningConfig:
     run_training = True
     run_prediction = False
     learning_rate = 0.001
+    scheduler_gamma = 0.95
     momentum = 0.9
     weight_decay = 0.99  # l2 norm strength
     log_file = "training.log"  # name of file with saved training loss and perplexity

@@ -65,6 +65,9 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
     losses = list()
     val_losses = list()
     vocab_size = len(train_loader.dataset.vocab)
+    exp_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
+        optimizer, gamma=Config.scheduler_gamma
+    )
 
     total_step = math.ceil(
         len(train_loader.dataset) / train_loader.batch_sampler.batch_size
@@ -92,21 +95,25 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
             # Obtain the batch.
             images, captions = next(iter(train_loader))
             images = images.to(device)
-            captions = captions
+            captions = captions.to(device)
 
             # make the captions for targets and teacher forcer
-            captions_train = captions[:, :-1].to(device)
-            captions_target = captions[:, 1:].to(device)
+            # captions_train = captions[:, :-1].to(device)
+            # captions_target = captions.to(device)
+            # print(captions_train.shape)
+            # print(captions_target.shape)
 
             # Pass the inputs through the CNN-RNN model.
             features = encoder(images)
             # print(features.shape)
-            outputs = decoder(features, captions_train)
+            outputs = decoder(features, captions)
+            # print(outputs.view(-1, vocab_size).shape, captions.contiguous().view(-1).shape)
+            # return
             # Calculate the batch loss
             loss = criterion(
                 # outputs.view(-1, vocab_size), captions_target.contiguous().view(-1)
                 outputs.view(-1, vocab_size),
-                captions_target.reshape(-1),
+                captions.contiguous().view(-1),
             )
 
             # Backward pass
@@ -154,5 +161,5 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
             torch.save(
                 encoder.state_dict(), os.path.join("./models", "encoder-%d.pth" % epoch)
             )
-
+        exp_lr_scheduler.step()
     # f.close()
