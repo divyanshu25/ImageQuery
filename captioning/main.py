@@ -111,7 +111,7 @@ def predict():
     test_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="test")
     vocab_size = len(test_loader.dataset.vocab)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device()
 
     encoder = EncoderCNN(CaptioningConfig.embed_size)
     encoder = encoder.to(device)
@@ -134,7 +134,6 @@ def predict():
         decoder.load_state_dict(torch.load(CaptioningConfig.decoder_file))
 
     indices = test_loader.dataset.get_train_indices()
-    # print("sampled indices:", indices)
     new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
     test_loader.batch_sampler.sampler = new_sampler
 
