@@ -13,11 +13,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #   ==================================================================
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+from captioning_config import CaptioningConfig as Config
 
 
 class DecoderRNN(nn.Module):
@@ -47,22 +47,53 @@ class DecoderRNN(nn.Module):
         lstm_outputs, _ = self.lstm(embed)
         # print(lstm_outputs.shape)
         out = self.linear(lstm_outputs)
-        # print(out.shape)
+        print(out.shape)
         return out
 
     def sample(self, inputs, states=None, max_len=20):
         """ accepts pre-processed image tensor (inputs) and
         returns predicted sentence (list of tensor ids of length max_len) """
-        output_sentence = []
+        # input 1,300
+        beam_size = Config.beam_size
+        sequences = [
+            [1.0, inputs, states, []]
+        ]  # [Value, inputs, states, output_sentence]
+        finished_beams = []
+        best_so_far = 0.0
         for i in range(max_len):
-            lstm_outputs, states = self.lstm(inputs, states)
-            lstm_outputs = lstm_outputs.squeeze(1)
-            out = self.linear(lstm_outputs)
-            out = self.softmax(out)
-            last_pick = out.max(1)[1]
-            output_sentence.append(last_pick.item())
-            if last_pick.item() == 1:
-                break
-            inputs = self.embedding_layer(last_pick).unsqueeze(1)
+            expanded_beams = []
+            for s in sequences:
+                lstm_outputs, states = self.lstm(s[1], s[2])
+                lstm_outputs = lstm_outputs.squeeze(1)  # 1,512
+                out = self.linear(lstm_outputs)  # 1,3004
+                out = self.softmax(out)
+                topk_picks = torch.topk(out, beam_size, dim=1)
+                topk_picks_values = topk_picks[0].squeeze()
+                topk_picks_indices = topk_picks[1].squeeze()
+                for ix, val in zip(topk_picks_indices, topk_picks_values):
+                    current_beam = []
+                    current_beam.extend(
+                        [
+                            s[0] * val.item(),
+                            self.embedding_layer(ix).unsqueeze(0).unsqueeze(0),
+                            states,
+                            s[3] + [ix.item()],
+                        ]
+                    )
+                    if ix.item() == 1:
+                        finished_beams.append(current_beam)
+                        if best_so_far < current_beam[0]:
+                            best_so_far = current_beam[0]
+                    else:
+                        expanded_beams.append(current_beam)
 
-        return output_sentence
+            ordered = sorted(expanded_beams, key=lambda tup: tup[0])[::-1]
+            # if ordered[0][0] < best_so_far:
+            #     break
+            sequences = ordered[:beam_size]
+        sequences.extend(finished_beams)
+        ordered = sorted(sequences, key=lambda tup: tup[0])[::-1]
+        output_sentences = []
+        for beam in ordered[:beam_size]:
+            output_sentences.append(beam[3])
+        return output_sentences
