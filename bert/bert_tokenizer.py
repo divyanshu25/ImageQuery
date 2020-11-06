@@ -13,18 +13,26 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #   ==================================================================
-from transformers import BertTokenizer
+from transformers import BertTokenizer, BertModel
 
 
 class BERT:
     def __init__(self):
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        self.model = BertModel.from_pretrained("bert-base-uncased", return_dict=True)
 
     def get_tokenizer(self):
         return self.tokenizer
 
     def get_vocab(self):
         return self.tokenizer.get_vocab()
+
+    def get_model(self):
+        return self.model
+
+    def get_input_embeddings(self):
+        return self.model.get_input_embeddings()
+
 
 
 # def get_bert_enodcer(text):

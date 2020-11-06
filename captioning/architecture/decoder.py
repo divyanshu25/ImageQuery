@@ -18,12 +18,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 from captioning_config import CaptioningConfig as Config
+from bert.bert_tokenizer import BERT
 
 
 class DecoderRNN(nn.Module):
-    def __init__(self, embed_size, hidden_size, vocab_size, num_layers=1):
+    def __init__(self, embed_size, hidden_size, vocab_size, embedding_layer, num_layers=2):
         super().__init__()
-        self.embedding_layer = nn.Embedding(vocab_size, embed_size)
+        self.embedding_layer = embedding_layer
+        self.embedding_layer.requires_grad_(False)
 
         self.project_feature_layer = nn.Linear(embed_size, hidden_size)
 

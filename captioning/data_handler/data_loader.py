@@ -25,7 +25,7 @@ from data_handler.vocabulary import Vocabulary
 from bert.bert_tokenizer import BERT
 
 
-def get_data_loader(config, flickr_ann_dict, mode="train"):
+def get_data_loader(config, flickr_ann_dict, tokenizer, mode="train"):
 
     """Load and normalizing the CIFAR10 training and test datasets using torchvision"""
 
@@ -41,13 +41,6 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
         ]
     )
 
-    # vocab = Vocabulary(
-    #     config.vocab_threshold,
-    #     config.vocab_file,
-    #     config.annotations_file,
-    #     vocab_from_file=Config.vocab_from_file,
-    # )
-    bert = BERT()
     dataset = None
     data_loader = None
     if mode == "train":
@@ -57,7 +50,7 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
             mode="train",
             batch_size=config.batch_size,
             # vocab=vocab,
-            tokenizer=bert.get_tokenizer(),
+            tokenizer=tokenizer,
             ann_dict=flickr_ann_dict,
             transform=transform,
         )
@@ -76,7 +69,7 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
             mode="test",
             batch_size=config.batch_size,
             # vocab=vocab,
-            tokenizer=bert.get_tokenizer(),
+            tokenizer=tokenizer,
             ann_dict=flickr_ann_dict,
             transform=transform,
         )
@@ -84,7 +77,7 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
             dataset,
             batch_size=config.batch_size,
             num_workers=config.num_workers,
-            shuffle=True,
+            shuffle=False,
         )
     elif mode == "val":
         dataset = Flickr8kCustom(
@@ -93,7 +86,7 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
             mode="val",
             batch_size=config.batch_size,
             # vocab=vocab,
-            tokenizer=bert.get_tokenizer(),
+            tokenizer=tokenizer,
             ann_dict=flickr_ann_dict,
             transform=transform,
         )

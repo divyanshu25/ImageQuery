@@ -129,10 +129,16 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
         if epoch % Config.save_every == 0:
             print("\nSaving the model")
             torch.save(
-                decoder.state_dict(), os.path.join(Config.models_dir, "{}-{}.pth".format(Config.decoder_prefix,epoch))
+                decoder.state_dict(),
+                os.path.join(
+                    Config.models_dir, "{}-{}.pth".format(Config.decoder_prefix, epoch)
+                ),
             )
             torch.save(
-                encoder.state_dict(), os.path.join(Config.models_dir, "{}-{}.pth".format(Config.encoder_prefix,epoch))
+                encoder.state_dict(),
+                os.path.join(
+                    Config.models_dir, "{}-{}.pth".format(Config.encoder_prefix, epoch)
+                ),
             )
         exp_lr_scheduler.step()
     # f.close()

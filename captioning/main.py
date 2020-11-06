@@ -27,7 +27,7 @@ import pprint
 
 import torch.nn as nn
 import torch
-
+from bert.bert_tokenizer import BERT
 from utils import display_image
 
 
@@ -71,10 +71,16 @@ def print_stats(train_loader, val_loader):
 
 def train_and_validate():
     # Step1: Load Data and Visulaize
+    bert = BERT()
     device = get_device()
     flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
-    train_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="train")
-    val_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="val")
+    train_loader = get_data_loader(
+        CaptioningConfig, flickr_ann_dict, bert.get_tokenizer(), mode="train"
+    )
+
+    val_loader = get_data_loader(
+        CaptioningConfig, flickr_ann_dict, bert.get_tokenizer(), mode="val"
+    )
     vocab_size = train_loader.dataset.vocab_size
     # print(vocab_size)
     # print_stats(train_loader, val_loader)
@@ -82,7 +88,7 @@ def train_and_validate():
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
     encoder = EncoderCNN(CaptioningConfig.embed_size)
     decoder = DecoderRNN(
-        CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size
+        CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size, bert.get_input_embeddings()
     )
     criterion = nn.CrossEntropyLoss()
 
@@ -115,8 +121,11 @@ def train_and_validate():
 
 
 def predict():
+    bert = BERT()
     flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
-    test_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="test")
+    test_loader = get_data_loader(
+        CaptioningConfig, flickr_ann_dict, bert.get_tokenizer(), mode="test"
+    )
     vocab_size = test_loader.dataset.vocab_size
 
     device = get_device()

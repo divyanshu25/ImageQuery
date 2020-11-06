@@ -26,20 +26,20 @@ class CaptioningConfig:
     dummy_annotations_file = os.path.join(
         data_dir, "Flickr8k_text/Flickr8k_dummy.token.txt"
     )
-    encoder_prefix = 'ecnoder_resnet_18'
-    decoder_prefix = 'decoder_resenet_18'
+    encoder_prefix = "ecnoder_resnet_50"
+    decoder_prefix = "decoder_resnet_50"
     annotations_file = os.path.join(data_dir, "Flickr8k_text/Flickr8k.token.txt")
     images_dir = os.path.join(data_dir, "Flickr8k_Dataset")
     train_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.trainImages.txt")
     val_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.devImages.txt")
     test_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.testImages.txt")
     vocab_file = os.path.join(data_dir, "vocab.pkl")
-    encoder_file = os.path.join(models_dir, "encoder-3.pth")
-    decoder_file = os.path.join(models_dir, "decoder-3.pth")
-    batch_size = 256  # batch size
+    encoder_file = os.path.join(models_dir, "ecnoder_resnet_18-4.pth")
+    decoder_file = os.path.join(models_dir, "decoder_resenet_18-4.pth")
+    batch_size = 8  # batch size
     vocab_threshold = 5  # minimum word count threshold
     vocab_from_file = True  # if True, load existing vocab file
-    embed_size = 300  # dimensionality of image and word embeddings
+    embed_size = 768  # dimensionality of image and word embeddings
     hidden_size = 512  # number of features in hidden state of the RNN decoder
     epoch_range = range(1, 20)  # number of training epochs
     save_every = 1  # determines frequency of saving model weights
