@@ -27,7 +27,7 @@ import pprint
 
 import torch.nn as nn
 import torch
-from bert.bert_tokenizer import BERT
+from bert.bert import BERT
 from utils import display_image
 
 

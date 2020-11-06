@@ -23,7 +23,7 @@ import torchvision.models as models
 class EncoderCNN(nn.Module):
     def __init__(self, embed_size):
         super(EncoderCNN, self).__init__()
-        self.resnet = models.resnet50(pretrained=True)
+        self.resnet = models.resnet18(pretrained=True)
         for param in self.resnet.parameters():
             param.requires_grad_(False)
         self.resnet.fc = nn.Linear(self.resnet.fc.in_features, embed_size)

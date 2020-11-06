@@ -19,7 +19,7 @@ from flask_apispec import MethodResource as Resource
 from captioning.schema import PopulateImageSchema
 from captioning.captioning_config import CaptioningConfig
 from models import ImageCaptions, db
-from bert import bert_tokenizer
+from bert import bert
 import os
 
 
@@ -39,7 +39,7 @@ class PopulateImageData(Resource):
                     tokens = l.split("#")
                     image_id = tokens[0]
                     caption = tokens[1][2:]
-                    encoded_caption = bert_tokenizer.get_bert_enoding(caption)
+                    encoded_caption = bert.get_bert_enoding(caption)
                     caption_index = int(tokens[1][0])
                     captions_obj = ImageCaptions(
                         image_path=image_id,

@@ -21,7 +21,7 @@ import os
 import nltk
 import numpy as np
 from tqdm import tqdm
-from bert.bert_tokenizer import BERT
+from bert.bert import BERT
 
 
 class Flickr8kCustom(Dataset):

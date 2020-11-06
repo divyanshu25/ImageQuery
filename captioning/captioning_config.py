@@ -26,8 +26,8 @@ class CaptioningConfig:
     dummy_annotations_file = os.path.join(
         data_dir, "Flickr8k_text/Flickr8k_dummy.token.txt"
     )
-    encoder_prefix = "ecnoder_resnet_50"
-    decoder_prefix = "decoder_resnet_50"
+    encoder_prefix = "ecnoder_resnet_18"
+    decoder_prefix = "decoder_resnet_18"
     annotations_file = os.path.join(data_dir, "Flickr8k_text/Flickr8k.token.txt")
     images_dir = os.path.join(data_dir, "Flickr8k_Dataset")
     train_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.trainImages.txt")

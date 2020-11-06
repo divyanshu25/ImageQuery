@@ -22,7 +22,7 @@ from torchvision import transforms
 from captioning_config import CaptioningConfig as Config
 from data_handler.flickr_dataset import Flickr8kCustom
 from data_handler.vocabulary import Vocabulary
-from bert.bert_tokenizer import BERT
+from bert.bert import BERT
 
 
 def get_data_loader(config, flickr_ann_dict, tokenizer, mode="train"):

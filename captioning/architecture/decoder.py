@@ -18,7 +18,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 from captioning_config import CaptioningConfig as Config
-from bert.bert_tokenizer import BERT
+from bert.bert import BERT
 
 
 class DecoderRNN(nn.Module):
