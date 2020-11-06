@@ -132,7 +132,7 @@ def predict():
 
     encoder = EncoderCNN(CaptioningConfig.embed_size)
     decoder = DecoderRNN(
-        CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size
+        CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size, bert.get_input_embeddings()
     )
     if device:
         encoder = encoder.cuda()
