@@ -26,7 +26,7 @@ class CaptioningConfig:
     dummy_annotations_file = os.path.join(
         data_dir, "Flickr8k_text/Flickr8k_dummy.token.txt"
     )
-    encoder_prefix = "ecnoder_resnet_18"
+    encoder_prefix = "encoder_resnet_18"
     decoder_prefix = "decoder_resnet_18"
     annotations_file = os.path.join(data_dir, "Flickr8k_text/Flickr8k.token.txt")
     images_dir = os.path.join(data_dir, "Flickr8k_Dataset")
@@ -34,8 +34,8 @@ class CaptioningConfig:
     val_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.devImages.txt")
     test_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.testImages.txt")
     vocab_file = os.path.join(data_dir, "vocab.pkl")
-    encoder_file = os.path.join(models_dir, "ecnoder_resnet_18-4.pth")
-    decoder_file = os.path.join(models_dir, "decoder_resenet_18-4.pth")
+    encoder_file = os.path.join(models_dir, "ecnoder_resnet_18-10.pth")
+    decoder_file = os.path.join(models_dir, "decoder_resnet_18-10.pth")
     batch_size = 8  # batch size
     vocab_threshold = 5  # minimum word count threshold
     vocab_from_file = True  # if True, load existing vocab file
