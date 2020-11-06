@@ -22,6 +22,7 @@ from torchvision import transforms
 from captioning_config import CaptioningConfig as Config
 from data_handler.flickr_dataset import Flickr8kCustom
 from data_handler.vocabulary import Vocabulary
+from bert.bert_tokenizer import BERT
 
 
 def get_data_loader(config, flickr_ann_dict, mode="train"):
@@ -40,13 +41,13 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
         ]
     )
 
-    vocab = Vocabulary(
-        config.vocab_threshold,
-        config.vocab_file,
-        config.annotations_file,
-        vocab_from_file=Config.vocab_from_file,
-    )
-
+    # vocab = Vocabulary(
+    #     config.vocab_threshold,
+    #     config.vocab_file,
+    #     config.annotations_file,
+    #     vocab_from_file=Config.vocab_from_file,
+    # )
+    bert = BERT()
     dataset = None
     data_loader = None
     if mode == "train":
@@ -55,7 +56,8 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
             id_file=config.train_id_file,
             mode="train",
             batch_size=config.batch_size,
-            vocab=vocab,
+            # vocab=vocab,
+            tokenizer=bert.get_tokenizer(),
             ann_dict=flickr_ann_dict,
             transform=transform,
         )
@@ -73,7 +75,8 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
             id_file=config.test_id_file,
             mode="test",
             batch_size=config.batch_size,
-            vocab=vocab,
+            # vocab=vocab,
+            tokenizer=bert.get_tokenizer(),
             ann_dict=flickr_ann_dict,
             transform=transform,
         )
@@ -89,7 +92,8 @@ def get_data_loader(config, flickr_ann_dict, mode="train"):
             id_file=config.val_id_file,
             mode="val",
             batch_size=config.batch_size,
-            vocab=vocab,
+            # vocab=vocab,
+            tokenizer=bert.get_tokenizer(),
             ann_dict=flickr_ann_dict,
             transform=transform,
         )

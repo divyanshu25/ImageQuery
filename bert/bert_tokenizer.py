@@ -16,10 +16,21 @@
 from transformers import BertTokenizer
 
 
-def get_bert_enoding(text):
+class BERT:
+    def __init__(self):
+        self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
-    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-    # text = "[CLS] " + text + " [SEP]"
-    tokenized_text = tokenizer.tokenize(text)
-    indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-    return str(indexed_tokens)
+    def get_tokenizer(self):
+        return self.tokenizer
+
+    def get_vocab(self):
+        return self.tokenizer.get_vocab()
+
+
+# def get_bert_enodcer(text):
+#
+#     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+#     # text = "[CLS] " + text + " [SEP]"
+#     tokenized_text = tokenizer.tokenize(text)
+#     indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+#     return str(indexed_tokens)

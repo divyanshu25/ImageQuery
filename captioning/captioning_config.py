@@ -44,8 +44,8 @@ class CaptioningConfig:
     print_every = 10  # determines window for printing average loss
     num_workers = 2
     load_from_file = False
-    run_training = False
-    run_prediction = True
+    run_training = True
+    run_prediction = False
     learning_rate = 0.001
     scheduler_gamma = 0.95
     momentum = 0.9

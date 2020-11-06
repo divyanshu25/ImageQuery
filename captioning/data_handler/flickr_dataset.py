@@ -21,6 +21,7 @@ import os
 import nltk
 import numpy as np
 from tqdm import tqdm
+from bert.bert_tokenizer import BERT
 
 
 class Flickr8kCustom(Dataset):
@@ -38,7 +39,8 @@ class Flickr8kCustom(Dataset):
         self,
         img_dir,
         id_file,
-        vocab,
+        # vocab,
+        tokenizer,
         mode="train",
         batch_size=1,
         ann_dict=None,
@@ -49,15 +51,19 @@ class Flickr8kCustom(Dataset):
         self.id_file = id_file
         self.img_dir = img_dir
         self.ids = self.get_ids(id_file)
-        self.vocab = vocab
+        # self.vocab = vocab
         self.target_transform = target_transform
         self.transform = transform
         self.mode = mode
         self.ann_dict = ann_dict
         self.batch_size = batch_size
+        ## ======== BERT ============= ##
+        self.tokenizer = tokenizer
+        self.vocab_size = tokenizer.vocab_size
+
         print("Getting tokens from all captions to generate length...")
         all_tokens = [
-            nltk.tokenize.word_tokenize(str(self.ann_dict[self.ids[index]]).lower())
+            tokenizer.tokenize(str(self.ann_dict[self.ids[index]]).lower())
             for index in tqdm(np.arange(len(self.ids)))
         ]
         self.caption_lengths = [len(token) for token in all_tokens]
@@ -89,10 +95,11 @@ class Flickr8kCustom(Dataset):
         if self.mode == "train" or self.mode == "val":
             caption = []
             target = self.ann_dict[img_id]
-            tokens = nltk.tokenize.word_tokenize(str(target).lower())
-            caption.append(self.vocab(self.vocab.start_word))
-            caption.extend([self.vocab(token) for token in tokens])
-            caption.append(self.vocab(self.vocab.end_word))
+            tokens = self.tokenizer.tokenize(str(target).lower())
+            caption.append(self.tokenizer.cls_token)
+            caption.extend([token for token in tokens])
+            caption.append(self.tokenizer.sep_token)
+            caption = self.tokenizer.convert_tokens_to_ids(caption)
             # caption = caption[:1]
             caption = torch.Tensor(caption).long()
             if self.transform is not None:

@@ -29,7 +29,7 @@ wandb.init(project="test_ImageQuery")
 
 
 def validate(val_loader, encoder, decoder, criterion, device):
-    vocab_size = len(val_loader.dataset.vocab)
+    vocab_size = val_loader.dataset.vocab_size
     with torch.no_grad():
         # set the evaluation mode
         encoder.eval()
@@ -45,13 +45,6 @@ def validate(val_loader, encoder, decoder, criterion, device):
             val_images = val_images.cuda()
             val_captions = val_captions.cuda()
 
-        # define the captions
-        # captions_target = val_captions[:, 1:]#.to(device)
-        # captions_train = val_captions[:, : val_captions.shape[1] - 1]#.to(device)
-
-        # Move batch of images and captions to GPU if CUDA is available.
-        # val_images = val_images.to(device)
-
         # Pass the inputs through the CNN-RNN model.
         features = encoder(val_images)
         outputs = decoder(features, val_captions)
@@ -63,9 +56,7 @@ def validate(val_loader, encoder, decoder, criterion, device):
 
 def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, device):
     # f = open(Config.log_file, "w")
-    losses = list()
-    val_losses = list()
-    vocab_size = len(train_loader.dataset.vocab)
+    vocab_size = train_loader.dataset.vocab_size
     exp_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
         optimizer, gamma=Config.scheduler_gamma
     )
@@ -92,25 +83,16 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
             # Create and assign a batch sampler to retrieve a batch with the sampled indices.
             new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
             train_loader.batch_sampler.sampler = new_sampler
-
             # Obtain the batch.
             images, captions = next(iter(train_loader))
             if device:
                 images = images.cuda()
                 captions = captions.cuda()
 
-            # make the captions for targets and teacher forcer
-            # captions_train = captions[:, :-1].to(device)
-            # captions_target = captions.to(device)
-            # print(captions_train.shape)
-            # print(captions_target.shape)
-
             # Pass the inputs through the CNN-RNN model.
             features = encoder(images)
             # print(features.shape)
             outputs = decoder(features, captions)
-            # print(outputs.view(-1, vocab_size).shape, captions.contiguous().view(-1).shape)
-            # return
             # Calculate the batch loss
             loss = criterion(
                 # outputs.view(-1, vocab_size), captions_target.contiguous().view(-1)
@@ -130,14 +112,6 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
             encoder.train()
             decoder.train()
 
-            # append the validation loss and training loss
-            val_losses.append(val_loss.item())
-            losses.append(loss.item())
-
-            # save the losses
-            np.save("losses", np.array(losses))
-            np.save("val_losses", np.array(val_losses))
-
             # Get training statistics.
             stats = "Epoch [%d/%d], Step [%d/%d], Train Loss: %.4f, Val Loss: %.4f" % (
                 epoch,
@@ -151,9 +125,6 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
             if i_step % Config.print_every == 0:
                 print(stats)
                 wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
-                # sys.stdout.flush()
-                # f.write(stats + "\n")
-                # f.flush()
         # Save the weights.
         if epoch % Config.save_every == 0:
             print("\nSaving the model")
