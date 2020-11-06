@@ -114,8 +114,16 @@ def train_and_validate():
                 CaptioningConfig.encoder_file, CaptioningConfig.decoder_file
             )
         )
-        encoder.load_state_dict(torch.load(CaptioningConfig.encoder_file))
-        decoder.load_state_dict(torch.load(CaptioningConfig.decoder_file))
+        if not torch.cuda.is_available():
+            encoder.load_state_dict(
+                torch.load(CaptioningConfig.encoder_file, map_location=torch.device("cpu"))
+            )
+            decoder.load_state_dict(
+                torch.load(CaptioningConfig.decoder_file, map_location=torch.device("cpu"))
+            )
+        else:
+            encoder.load_state_dict(torch.load(CaptioningConfig.encoder_file))
+            decoder.load_state_dict(torch.load(CaptioningConfig.decoder_file))
 
     train(encoder, decoder, optimizer, criterion, train_loader, val_loader, device)
 
@@ -132,7 +140,7 @@ def predict():
 
     encoder = EncoderCNN(CaptioningConfig.embed_size)
     decoder = DecoderRNN(
-        CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size
+        CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size, bert.get_input_embeddings()
     )
     if device:
         encoder = encoder.cuda()
