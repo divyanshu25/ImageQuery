@@ -37,7 +37,7 @@ class DecoderRNN(nn.Module):
         self.linear = nn.Linear(hidden_size, vocab_size)
 
     def forward(self, features, captions):
-        captions = captions[:, 1:]
+        captions = captions[:, :-1]
         # print(captions.shape)
         embed = self.embedding_layer(captions)
         # print(embed.shape)
