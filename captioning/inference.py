@@ -27,7 +27,9 @@ def get_predict(images, captions, encoder, decoder, test_loader):
         print(image.shape)
         features = encoder(image).unsqueeze(1)
         output = decoder.sample(features)
-        sentence = clean_sentence(output, test_loader)
-        print("Predicted Caption: " + str(sentence))
+        for index, s in enumerate(output):
+            sentence = clean_sentence(s, test_loader)
+            print("Predicted Caption {}: ".format(index) + str(sentence))
+
         print("Original Caption: " + str(captions[i]))
         imshow(image[0])

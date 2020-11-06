@@ -46,10 +46,11 @@ class CaptioningConfig:
     print_every = 10  # determines window for printing average loss
     num_workers = 2
     load_from_file = False
-    run_training = True
-    run_prediction = False
+    run_training = False
+    run_prediction = True
     learning_rate = 0.001
     scheduler_gamma = 0.95
     momentum = 0.9
     weight_decay = 0.99  # l2 norm strength
     log_file = "training.log"  # name of file with saved training loss and perplexity
+    beam_size = 3

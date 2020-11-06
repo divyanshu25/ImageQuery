@@ -102,7 +102,11 @@ def train_and_validate():
 
     # Step4: Train the network.
     if CaptioningConfig.load_from_file:
-        print("Loading encoder from {} and decoder from {} to resume training.".format(CaptioningConfig.encoder_file, CaptioningConfig.decoder_file))
+        print(
+            "Loading encoder from {} and decoder from {} to resume training.".format(
+                CaptioningConfig.encoder_file, CaptioningConfig.decoder_file
+            )
+        )
         encoder.load_state_dict(torch.load(CaptioningConfig.encoder_file))
         decoder.load_state_dict(torch.load(CaptioningConfig.decoder_file))
 
