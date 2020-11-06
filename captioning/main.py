@@ -75,7 +75,8 @@ def train_and_validate():
     flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
     train_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="train")
     val_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="val")
-    vocab_size = len(train_loader.dataset.vocab)
+    vocab_size = train_loader.dataset.vocab_size
+    # print(vocab_size)
     # print_stats(train_loader, val_loader)
 
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
@@ -116,7 +117,7 @@ def train_and_validate():
 def predict():
     flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
     test_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="test")
-    vocab_size = len(test_loader.dataset.vocab)
+    vocab_size = test_loader.dataset.vocab_size
 
     device = get_device()
 

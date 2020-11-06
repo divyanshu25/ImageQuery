@@ -26,7 +26,7 @@ class CaptioningConfig:
     dummy_annotations_file = os.path.join(
         data_dir, "Flickr8k_text/Flickr8k_dummy.token.txt"
     )
-    enocder_prefix = 'ecnoder_resnet_18'
+    encoder_prefix = 'ecnoder_resnet_18'
     decoder_prefix = 'decoder_resenet_18'
     annotations_file = os.path.join(data_dir, "Flickr8k_text/Flickr8k.token.txt")
     images_dir = os.path.join(data_dir, "Flickr8k_Dataset")
@@ -46,8 +46,8 @@ class CaptioningConfig:
     print_every = 10  # determines window for printing average loss
     num_workers = 2
     load_from_file = False
-    run_training = False
-    run_prediction = True
+    run_training = True
+    run_prediction = False
     learning_rate = 0.001
     scheduler_gamma = 0.95
     momentum = 0.9

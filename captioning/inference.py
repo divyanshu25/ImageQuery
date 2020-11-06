@@ -24,7 +24,7 @@ def get_predict(images, captions, encoder, decoder, test_loader):
     # print(images.shape)
     for i in range(images.shape[0]):
         image = images[i].unsqueeze(0)
-        print(image.shape)
+        # print(image.shape)
         features = encoder(image).unsqueeze(1)
         output = decoder.sample(features)
         for index, s in enumerate(output):

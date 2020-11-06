@@ -40,12 +40,8 @@ def display_image(images, labels, data_loader):
 
 def clean_sentence(output, data_loader):
     # output = output.numpy()
-    words_sequence = []
-    for i in output:
-        words_sequence.append(data_loader.dataset.vocab.idx2word[i])
-
+    words_sequence = data_loader.dataset.tokenizer.convert_ids_to_tokens(output)
     words_sequence = words_sequence[1:-1]
     sentence = " ".join(words_sequence)
     sentence = sentence.capitalize()
-
     return sentence
