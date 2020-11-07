@@ -25,7 +25,7 @@ class DecoderRNN(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, embedding_layer, num_layers=2):
         super().__init__()
         self.embedding_layer = embedding_layer
-        self.embedding_layer.requires_grad_(False)
+        # self.embedding_layer.requires_grad_(False)
 
         self.project_feature_layer = nn.Linear(embed_size, hidden_size)
 
