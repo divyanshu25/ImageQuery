@@ -23,10 +23,10 @@ import torch
 import math
 import os
 
-# import wandb
+import wandb
 
-# wandb.init(project="test_ImageQuery")
-from utils import clean_sentence
+if Config.enable_wandb:
+    wandb.init(project="test_ImageQuery")
 
 
 def validate(val_loader, encoder, decoder, criterion, device):
@@ -66,8 +66,9 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
         len(train_loader.dataset) / train_loader.batch_sampler.batch_size
     )
     # set decoder and encoder into train mode
-    # wandb.watch(encoder)
-    # wandb.watch(decoder)
+    if Config.enable_wandb:
+        wandb.watch(encoder)
+        wandb.watch(decoder)
     encoder.train()
     decoder.train()
     for epoch in Config.epoch_range:
@@ -125,7 +126,8 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
 
             if i_step % Config.print_every == 0:
                 print(stats)
-                # wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
+                if Config.enable_wandb:
+                    wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
         # Save the weights.
         if epoch % Config.save_every == 0:
             print("\nSaving the model")

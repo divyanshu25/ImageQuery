@@ -54,3 +54,4 @@ class CaptioningConfig:
     weight_decay = 0.99  # l2 norm strength
     log_file = "training.log"  # name of file with saved training loss and perplexity
     beam_size = 10
+    enable_wandb = True

@@ -22,7 +22,9 @@ from bert.bert import BERT
 
 
 class DecoderRNN(nn.Module):
-    def __init__(self, embed_size, hidden_size, vocab_size, embedding_layer, num_layers=1):
+    def __init__(
+        self, embed_size, hidden_size, vocab_size, embedding_layer, num_layers=1
+    ):
         super().__init__()
         self.embedding_layer = embedding_layer
 

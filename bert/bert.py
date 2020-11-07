@@ -34,7 +34,6 @@ class BERT:
         return self.model.get_input_embeddings()
 
 
-
 # def get_bert_enodcer(text):
 #
 #     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
