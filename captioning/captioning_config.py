@@ -26,15 +26,15 @@ class CaptioningConfig:
     dummy_annotations_file = os.path.join(
         data_dir, "Flickr8k_text/Flickr8k_dummy.token.txt"
     )
-    encoder_prefix = "encoder_resnet_18"
-    decoder_prefix = "decoder_resnet_18"
+    encoder_prefix = "encoder_resnet_50"
+    decoder_prefix = "decoder_resnet_50"
     annotations_file = os.path.join(data_dir, "Flickr8k_text/Flickr8k.token.txt")
     images_dir = os.path.join(data_dir, "Flickr8k_Dataset")
     train_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.trainImages.txt")
     val_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.devImages.txt")
     test_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.testImages.txt")
     vocab_file = os.path.join(data_dir, "vocab.pkl")
-    encoder_file = os.path.join(models_dir, "ecnoder_resnet_18-10.pth")
+    encoder_file = os.path.join(models_dir, "encoder_resnet_18-10.pth")
     decoder_file = os.path.join(models_dir, "decoder_resnet_18-10.pth")
     batch_size = 8  # batch size
     vocab_threshold = 5  # minimum word count threshold
@@ -46,8 +46,8 @@ class CaptioningConfig:
     print_every = 10  # determines window for printing average loss
     num_workers = 2
     load_from_file = False
-    run_training = False
-    run_prediction = True
+    run_training = True
+    run_prediction = False
     learning_rate = 0.001
     scheduler_gamma = 0.95
     momentum = 0.9

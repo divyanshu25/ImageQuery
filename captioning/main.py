@@ -97,7 +97,7 @@ def train_and_validate():
         decoder = decoder.cuda()
         criterion = criterion.cuda()
     # Step3: Define Loss Function and optimizer
-    params = list(decoder.parameters()) + list(encoder.resnet.fc.parameters())
+    params = list(decoder.parameters()) + list(encoder.parameters())
 
     optimizer = torch.optim.Adam(params=params, lr=CaptioningConfig.learning_rate)
     # optimizer = torch.optim.SGD(

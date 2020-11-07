@@ -95,9 +95,6 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
             # print(features.shape)
             outputs = decoder(features, captions)
             # Calculate the batch loss
-            for index, s in enumerate(outputs):
-                sentence = clean_sentence(s, train_loader)
-                print("Predicted Caption {}: ".format(index) + str(sentence))
             loss = criterion(
                 # outputs.view(-1, vocab_size), captions_target.contiguous().view(-1)
                 outputs.view(-1, vocab_size),

@@ -25,7 +25,7 @@ class EncoderCNN(nn.Module):
         super(EncoderCNN, self).__init__()
         self.resnet = models.resnet18(pretrained=True)
         for param in self.resnet.parameters():
-            param.requires_grad_(False)
+            param.requires_grad_(True)
         self.resnet.fc = nn.Linear(self.resnet.fc.in_features, embed_size)
         self.resnet.fc.requires_grad_(True)
 
