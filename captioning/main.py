@@ -18,8 +18,9 @@ from collections import Counter
 from architecture.encoder import EncoderCNN
 from architecture.decoder import DecoderRNN
 from captioning.captioning_config import CaptioningConfig
-from data_handler.data_loader import get_data_loader
+from data_handler.data_loader import get_data_loader_common, get_vocabulary
 from data_handler.utils import parse_flickr
+from utils import convert_captions
 from train import train
 from inference import get_predict
 import torch.utils.data as data
@@ -72,10 +73,14 @@ def print_stats(train_loader, val_loader):
 def train_and_validate():
     # Step1: Load Data and Visulaize
     device = get_device()
-    flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
-    train_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="train")
-    val_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="val")
-    vocab_size = len(train_loader.dataset.vocab)
+    #flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
+    train_loader = get_data_loader_common(CaptioningConfig, mode="train", type=CaptioningConfig.dataset_type)
+    val_loader = get_data_loader_common(CaptioningConfig, mode="val", type=CaptioningConfig.dataset_type)
+    # train_loader = get_coco_data_loader(CaptioningConfig, mode="train")
+    # val_loader = get_coco_data_loader(CaptioningConfig, mode="val")
+    vocab = get_vocabulary(CaptioningConfig, type=CaptioningConfig.dataset_type)
+    vocab_size = len(vocab)
+    # vocab_size = len(train_loader.dataset.vocab)
     # print_stats(train_loader, val_loader)
 
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
@@ -110,13 +115,15 @@ def train_and_validate():
         encoder.load_state_dict(torch.load(CaptioningConfig.encoder_file))
         decoder.load_state_dict(torch.load(CaptioningConfig.decoder_file))
 
-    train(encoder, decoder, optimizer, criterion, train_loader, val_loader, device)
+    train(encoder, decoder, optimizer, criterion, train_loader, val_loader, device, vocab)
 
 
 def predict():
-    flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
-    test_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="test")
-    vocab_size = len(test_loader.dataset.vocab)
+    # flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
+    test_loader = get_data_loader_common(CaptioningConfig, mode="test", type=CaptioningConfig.dataset_type)
+    #vocab_size = len(test_loader.dataset.vocab)
+    vocab = get_vocabulary(CaptioningConfig, type=CaptioningConfig.dataset_type)
+    vocab_size = len(vocab)
 
     device = get_device()
 
@@ -141,15 +148,15 @@ def predict():
         encoder.load_state_dict(torch.load(CaptioningConfig.encoder_file))
         decoder.load_state_dict(torch.load(CaptioningConfig.decoder_file))
 
-    indices = test_loader.dataset.get_train_indices()
-    new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
-    test_loader.batch_sampler.sampler = new_sampler
+    #indices = test_loader.dataset.get_train_indices()
+    #new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
+    #test_loader.batch_sampler.sampler = new_sampler
 
-    images, captions = next(iter(test_loader))
+    images, captions = convert_captions(next(iter(test_loader)), vocab)
     if device:
         images = images.cuda()
     # imshow(orig_image)
-    get_predict(images, captions, encoder, decoder, test_loader)
+    get_predict(images, encoder, decoder, vocab, captions)
 
 
 if __name__ == "__main__":

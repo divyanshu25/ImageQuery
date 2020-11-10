@@ -21,22 +21,31 @@ from config import ROOT_DIR
 class CaptioningConfig:
     """Base config."""
 
+    dataset_type = "coco"  # Supported types: 'flickr8k', 'coco'
     data_dir = os.path.join(ROOT_DIR, "captioning/data")
     models_dir = os.path.join(ROOT_DIR, "captioning/models")
     dummy_annotations_file = os.path.join(
         data_dir, "Flickr8k_text/Flickr8k_dummy.token.txt"
     )
-    enocder_prefix = 'ecnoder_resnet_18'
-    decoder_prefix = 'decoder_resenet_18'
+    encoder_prefix = 'encoder_30k_naive'
+    decoder_prefix = 'decoder_30k_naive'
     annotations_file = os.path.join(data_dir, "Flickr8k_text/Flickr8k.token.txt")
     images_dir = os.path.join(data_dir, "Flickr8k_Dataset")
     train_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.trainImages.txt")
     val_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.devImages.txt")
     test_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.testImages.txt")
-    vocab_file = os.path.join(data_dir, "vocab.pkl")
-    encoder_file = os.path.join(models_dir, "encoder-3.pth")
-    decoder_file = os.path.join(models_dir, "decoder-3.pth")
-    batch_size = 256  # batch size
+    test_root_dir_coco = "/Users/shubhi/GT_courses/DeepLearning/project/coco_captioning/test2017"
+    #test_root_dir_coco = "/home/shubhi_agl22/datasets/coco_captioning/test2017"
+    train_root_dir_coco = "/home/shubhi_agl22/datasets/coco_captioning/train2017"
+    val_root_dir_coco = "/home/shubhi_agl22/datasets/coco_captioning/val2017"
+    train_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/captions_train2017.json"
+    val_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/captions_val2017.json"
+    #test_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/image_info_test2017.json"
+    test_ann_file_coco = "/Users/shubhi/GT_courses/DeepLearning/project/coco_captioning/image_info_test2017.json"
+    vocab_file = os.path.join(data_dir, "vocab_{}.pkl".format(dataset_type))
+    encoder_file = os.path.join(models_dir, "encoder_30k_naive-2.pth")
+    decoder_file = os.path.join(models_dir, "decoder_30k_naive-2.pth")
+    batch_size = 8  # batch size
     vocab_threshold = 5  # minimum word count threshold
     vocab_from_file = True  # if True, load existing vocab file
     embed_size = 300  # dimensionality of image and word embeddings
@@ -54,3 +63,5 @@ class CaptioningConfig:
     weight_decay = 0.99  # l2 norm strength
     log_file = "training.log"  # name of file with saved training loss and perplexity
     beam_size = 3
+    max_length = 40
+    verbose = True

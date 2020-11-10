@@ -22,25 +22,27 @@ import torch.utils.data as data
 import torch
 import math
 import os
+from utils import convert_captions, clean_sentence
 
 import wandb
 
-wandb.init(project="test_ImageQuery")
+#wandb.init(project="test_ImageQuery")
 
 
-def validate(val_loader, encoder, decoder, criterion, device):
-    vocab_size = len(val_loader.dataset.vocab)
+def validate(val_loader, encoder, decoder, criterion, device, vocab):
+    # vocab_size = len(val_loader.dataset.vocab)
+    vocab_size = len(vocab)
     with torch.no_grad():
         # set the evaluation mode
         encoder.eval()
         decoder.eval()
-        val_indices = val_loader.dataset.get_train_indices()
+        #val_indices = val_loader.dataset.get_train_indices()
 
         # Create and assign a batch sampler to retrieve a batch with the sampled indices.
-        val_sampler = data.sampler.SubsetRandomSampler(indices=val_indices)
-        val_loader.batch_sampler.sampler = val_sampler
+        #val_sampler = data.sampler.SubsetRandomSampler(indices=val_indices)
+        #val_loader.batch_sampler.sampler = val_sampler
         # get the validation images and captions
-        val_images, val_captions = next(iter(val_loader))
+        val_images, val_captions = convert_captions(next(iter(val_loader)), vocab)
         if device:
             val_images = val_images.cuda()
             val_captions = val_captions.cuda()
@@ -61,11 +63,12 @@ def validate(val_loader, encoder, decoder, criterion, device):
         return val_loss
 
 
-def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, device):
+def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, device, vocab):
     # f = open(Config.log_file, "w")
     losses = list()
     val_losses = list()
-    vocab_size = len(train_loader.dataset.vocab)
+    # vocab_size = len(train_loader.dataset.vocab)
+    vocab_size = len(vocab)
     exp_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
         optimizer, gamma=Config.scheduler_gamma
     )
@@ -73,9 +76,10 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
     total_step = math.ceil(
         len(train_loader.dataset) / train_loader.batch_sampler.batch_size
     )
+    # total_step = 2
     # set decoder and encoder into train mode
-    wandb.watch(encoder)
-    wandb.watch(decoder)
+    #wandb.watch(encoder)
+    #wandb.watch(decoder)
     encoder.train()
     decoder.train()
     for epoch in Config.epoch_range:
@@ -87,14 +91,14 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
             encoder.zero_grad()
 
             # Randomly sample a caption length, and sample indices with that length.
-            indices = train_loader.dataset.get_train_indices()
+            #indices = train_loader.dataset.get_train_indices()
 
             # Create and assign a batch sampler to retrieve a batch with the sampled indices.
-            new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
-            train_loader.batch_sampler.sampler = new_sampler
+            #new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
+            #train_loader.batch_sampler.sampler = new_sampler
 
             # Obtain the batch.
-            images, captions = next(iter(train_loader))
+            images, captions = convert_captions(next(iter(train_loader)), vocab)
             if device:
                 images = images.cuda()
                 captions = captions.cuda()
@@ -117,6 +121,16 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
                 outputs.view(-1, vocab_size),
                 captions.contiguous().view(-1),
             )
+            if Config.verbose and i_step == total_step:
+                for batch in range(0, 5):
+                    curr_pred_vec = outputs[batch, :, :]
+                    predicted_caption = torch.max(curr_pred_vec, dim=1)
+
+                    print("Predicted_caption_Indices: ", clean_sentence(
+                        predicted_caption.indices.cpu().numpy(), vocab))
+                    print("Original Caption Indices: ", clean_sentence(captions[batch].cpu().numpy(), vocab))
+                    print("........")
+                print("=================================")
 
             # Backward pass
             loss.backward()
@@ -126,7 +140,7 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
 
             # - - - Validate - - -
             # turn the evaluation mode on
-            val_loss = validate(val_loader, encoder, decoder, criterion, device)
+            val_loss = validate(val_loader, encoder, decoder, criterion, device, vocab)
             encoder.train()
             decoder.train()
 
@@ -150,7 +164,7 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
 
             if i_step % Config.print_every == 0:
                 print(stats)
-                wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
+                #wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
                 # sys.stdout.flush()
                 # f.write(stats + "\n")
                 # f.flush()

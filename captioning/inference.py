@@ -19,7 +19,7 @@ from data_handler.data_loader import get_data_loader
 from utils import imshow, clean_sentence
 
 
-def get_predict(images, captions, encoder, decoder, test_loader):
+def get_predict(images, encoder, decoder, vocab, captions=None):
     # image = image.to(device)
     # print(images.shape)
     for i in range(images.shape[0]):
@@ -28,8 +28,8 @@ def get_predict(images, captions, encoder, decoder, test_loader):
         features = encoder(image).unsqueeze(1)
         output = decoder.sample(features)
         for index, s in enumerate(output):
-            sentence = clean_sentence(s, test_loader)
+            sentence = clean_sentence(s, vocab)
             print("Predicted Caption {}: ".format(index) + str(sentence))
-
-        print("Original Caption: " + str(captions[i]))
+        if captions is not None:
+            print("Original Caption: " + str(captions[i]))
         imshow(image[0])

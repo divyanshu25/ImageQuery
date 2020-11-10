@@ -47,7 +47,7 @@ class DecoderRNN(nn.Module):
         lstm_outputs, _ = self.lstm(embed)
         # print(lstm_outputs.shape)
         out = self.linear(lstm_outputs)
-        print(out.shape)
+        # print(out.shape)
         return out
 
     def sample(self, inputs, states=None, max_len=20):

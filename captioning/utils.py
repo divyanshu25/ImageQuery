@@ -17,6 +17,8 @@
 from captioning_config import CaptioningConfig as Config
 import matplotlib.pyplot as plt
 import numpy as np
+import nltk
+import torch
 
 
 def imshow(img, txt=None):
@@ -38,14 +40,38 @@ def display_image(images, labels, data_loader):
     # imshow(torchvision.utils.make_grid(images))
 
 
-def clean_sentence(output, data_loader):
+def clean_sentence(output, vocab):
     # output = output.numpy()
     words_sequence = []
     for i in output:
-        words_sequence.append(data_loader.dataset.vocab.idx2word[i])
+        words_sequence.append(vocab.idx2word[i])
 
-    words_sequence = words_sequence[1:-1]
+    #words_sequence = words_sequence[1:-1]
     sentence = " ".join(words_sequence)
     sentence = sentence.capitalize()
 
     return sentence
+
+
+def convert_captions(input, vocab):
+    images, target = input
+    all_captions = None
+
+    if len(target) > 0:
+        if not len(target) == Config.batch_size:
+            target = target[0]
+        all_captions = []
+        for c in target:
+            caption = []
+            tokens = nltk.tokenize.word_tokenize(str(c).lower())
+            caption.append(vocab(vocab.start_word))
+            caption.extend([vocab(token) for token in tokens])
+            caption.append(vocab(vocab.end_word))
+            for i in range(Config.max_length - len(caption)):
+                caption.append(vocab(vocab.end_word))
+            caption = caption[0:Config.max_length-1]
+            caption.append(vocab(vocab.end_word))
+            all_captions.append(caption)
+        # caption = caption[:1]
+        all_captions = torch.Tensor(all_captions).long()
+    return images, all_captions
