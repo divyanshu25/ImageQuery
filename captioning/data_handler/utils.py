@@ -13,6 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #   ==================================================================
+from pycocotools.coco import COCO
 
 
 def parse_flickr(ann_file):
@@ -26,4 +27,12 @@ def parse_flickr(ann_file):
     return ann_dict
 
 
-# print(" ".join("%5s" % classes[labels[j]] for j in range(4)))
+def parse_coco(ann_file):
+    coco = COCO(ann_file)
+    ann_dict = {}
+    for id in coco.imgs.keys():
+        ann_ids = coco.getAnnIds(imgIds=id)
+        anns = coco.loadAnns(ann_ids)
+        target = [ann["caption"] for ann in anns]
+        ann_dict[id] = target
+    return ann_dict

@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-from captioning_config import CaptioningConfig as Config
+from captioning_config import Config as Config
 
 
 class DecoderRNN(nn.Module):
@@ -47,7 +47,7 @@ class DecoderRNN(nn.Module):
         lstm_outputs, _ = self.lstm(embed)
         # print(lstm_outputs.shape)
         out = self.linear(lstm_outputs)
-        print(out.shape)
+        # print(out.shape)
         return out
 
     def sample(self, inputs, states=None, max_len=20):

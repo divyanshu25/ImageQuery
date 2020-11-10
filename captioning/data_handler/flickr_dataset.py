@@ -38,7 +38,7 @@ class Flickr8kCustom(Dataset):
         self,
         img_dir,
         id_file,
-        vocab,
+        # vocab,
         mode="train",
         batch_size=1,
         ann_dict=None,
@@ -49,7 +49,6 @@ class Flickr8kCustom(Dataset):
         self.id_file = id_file
         self.img_dir = img_dir
         self.ids = self.get_ids(id_file)
-        self.vocab = vocab
         self.target_transform = target_transform
         self.transform = transform
         self.mode = mode
@@ -87,29 +86,20 @@ class Flickr8kCustom(Dataset):
 
         # Captions
         if self.mode == "train" or self.mode == "val":
-            caption = []
             target = self.ann_dict[img_id]
-            tokens = nltk.tokenize.word_tokenize(str(target).lower())
-            caption.append(self.vocab(self.vocab.start_word))
-            caption.extend([self.vocab(token) for token in tokens])
-            caption.append(self.vocab(self.vocab.end_word))
-            # caption = caption[:1]
-            caption = torch.Tensor(caption).long()
             if self.transform is not None:
                 img = self.transform(img)
 
-            return img, caption
+            return img, target
         else:
             image = np.array(img)
             caption = self.ann_dict[img_id]
-            # image = orig_image.copy()
             if self.transform is not None:
                 image = self.transform(img)
             # return original image and pre-processed image tensor
             return image, caption
 
     def get_train_indices(self):
-        # print(len(self.caption_lengths))
         sel_length = np.random.choice(self.caption_lengths)
         all_indices = np.where(
             [

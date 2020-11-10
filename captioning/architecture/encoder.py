@@ -18,6 +18,9 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+from captioning_config import Config
+
+config = Config()
 
 
 class EncoderCNN(nn.Module):
@@ -25,7 +28,7 @@ class EncoderCNN(nn.Module):
         super(EncoderCNN, self).__init__()
         self.resnet = models.resnet50(pretrained=True)
         for param in self.resnet.parameters():
-            param.requires_grad_(False)
+            param.requires_grad_(config.train_encoder)
         self.resnet.fc = nn.Linear(self.resnet.fc.in_features, embed_size)
         self.resnet.fc.requires_grad_(True)
 

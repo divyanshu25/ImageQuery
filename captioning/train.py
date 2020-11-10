@@ -14,43 +14,31 @@
 #   limitations under the License.
 #   ==================================================================
 
-import sys
-from collections import Counter
-from captioning_config import CaptioningConfig as Config
-import numpy as np
-import torch.utils.data as data
+from captioning_config import Config
 import torch
 import math
 import os
-
+from utils import convert_captions, clean_sentence
 import wandb
 
-wandb.init(project="test_ImageQuery")
+config = Config()
+if config.enable_wandb:
+    wandb.init(project="test_ImageQuery")
 
 
-def validate(val_loader, encoder, decoder, criterion, device):
-    vocab_size = len(val_loader.dataset.vocab)
+def validate(val_loader, encoder, decoder, criterion, device, vocab):
+    vocab_size = len(vocab)
     with torch.no_grad():
         # set the evaluation mode
         encoder.eval()
         decoder.eval()
-        val_indices = val_loader.dataset.get_train_indices()
 
-        # Create and assign a batch sampler to retrieve a batch with the sampled indices.
-        val_sampler = data.sampler.SubsetRandomSampler(indices=val_indices)
-        val_loader.batch_sampler.sampler = val_sampler
-        # get the validation images and captions
-        val_images, val_captions = next(iter(val_loader))
+        val_images, val_captions = convert_captions(
+            next(iter(val_loader)), vocab, config
+        )
         if device:
             val_images = val_images.cuda()
             val_captions = val_captions.cuda()
-
-        # define the captions
-        # captions_target = val_captions[:, 1:]#.to(device)
-        # captions_train = val_captions[:, : val_captions.shape[1] - 1]#.to(device)
-
-        # Move batch of images and captions to GPU if CUDA is available.
-        # val_images = val_images.to(device)
 
         # Pass the inputs through the CNN-RNN model.
         features = encoder(val_images)
@@ -58,53 +46,40 @@ def validate(val_loader, encoder, decoder, criterion, device):
 
         # Calculate the batch loss.
         val_loss = criterion(outputs.view(-1, vocab_size), val_captions.view(-1))
+        encoder.train()
+        decoder.train()
         return val_loss
 
 
-def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, device):
-    # f = open(Config.log_file, "w")
-    losses = list()
-    val_losses = list()
-    vocab_size = len(train_loader.dataset.vocab)
+def train(
+    encoder, decoder, optimizer, criterion, train_loader, val_loader, device, vocab
+):
+
+    vocab_size = len(vocab)
     exp_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
-        optimizer, gamma=Config.scheduler_gamma
+        optimizer, gamma=config.scheduler_gamma
     )
 
     total_step = math.ceil(
         len(train_loader.dataset) / train_loader.batch_sampler.batch_size
     )
     # set decoder and encoder into train mode
-    wandb.watch(encoder)
-    wandb.watch(decoder)
+    if config.enable_wandb:
+        wandb.watch(encoder)
+        wandb.watch(decoder)
     encoder.train()
     decoder.train()
-    for epoch in Config.epoch_range:
+    for epoch in config.epoch_range:
 
         for i_step in range(1, total_step + 1):
-
             # zero the gradients
             decoder.zero_grad()
             encoder.zero_grad()
-
-            # Randomly sample a caption length, and sample indices with that length.
-            indices = train_loader.dataset.get_train_indices()
-
-            # Create and assign a batch sampler to retrieve a batch with the sampled indices.
-            new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
-            train_loader.batch_sampler.sampler = new_sampler
-
             # Obtain the batch.
-            images, captions = next(iter(train_loader))
+            images, captions = convert_captions(next(iter(train_loader)), vocab, config)
             if device:
                 images = images.cuda()
                 captions = captions.cuda()
-
-            # make the captions for targets and teacher forcer
-            # captions_train = captions[:, :-1].to(device)
-            # captions_target = captions.to(device)
-            # print(captions_train.shape)
-            # print(captions_target.shape)
-
             # Pass the inputs through the CNN-RNN model.
             features = encoder(images)
             # print(features.shape)
@@ -117,51 +92,53 @@ def train(encoder, decoder, optimizer, criterion, train_loader, val_loader, devi
                 outputs.view(-1, vocab_size),
                 captions.contiguous().view(-1),
             )
+            if config.verbose and i_step == total_step:
+                for batch in range(min(config.batch_size, 10)):
+                    curr_pred_vec = outputs[batch, :, :]
+                    predicted_caption = torch.max(curr_pred_vec, dim=1)
+                    print(
+                        "Predicted_caption_Indices: ",
+                        clean_sentence(predicted_caption.indices.cpu().numpy(), vocab),
+                    )
+                    print(
+                        "Original Caption Indices: ",
+                        clean_sentence(captions[batch].cpu().numpy(), vocab),
+                    )
+                print("=================================")
 
             # Backward pass
             loss.backward()
-
             # Update the parameters in the optimizer
             optimizer.step()
-
             # - - - Validate - - -
-            # turn the evaluation mode on
-            val_loss = validate(val_loader, encoder, decoder, criterion, device)
-            encoder.train()
-            decoder.train()
-
-            # append the validation loss and training loss
-            val_losses.append(val_loss.item())
-            losses.append(loss.item())
-
-            # save the losses
-            np.save("losses", np.array(losses))
-            np.save("val_losses", np.array(val_losses))
-
+            val_loss = validate(val_loader, encoder, decoder, criterion, device, vocab)
             # Get training statistics.
             stats = "Epoch [%d/%d], Step [%d/%d], Train Loss: %.4f, Val Loss: %.4f" % (
                 epoch,
-                Config.epoch_range[-1],
+                config.epoch_range[-1],
                 i_step,
                 total_step,
                 loss.item(),
                 val_loss.item(),
             )
 
-            if i_step % Config.print_every == 0:
+            if i_step % config.print_every == 0:
                 print(stats)
-                wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
-                # sys.stdout.flush()
-                # f.write(stats + "\n")
-                # f.flush()
+                if config.enable_wandb:
+                    wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
         # Save the weights.
-        if epoch % Config.save_every == 0:
+        if epoch % config.save_every == 0:
             print("\nSaving the model")
             torch.save(
-                decoder.state_dict(), os.path.join(Config.models_dir, "{}-{}.pth".format(Config.decoder_prefix,epoch))
+                decoder.state_dict(),
+                os.path.join(
+                    config.models_dir, "{}-{}.pth".format(config.decoder_prefix, epoch)
+                ),
             )
             torch.save(
-                encoder.state_dict(), os.path.join(Config.models_dir, "{}-{}.pth".format(Config.encoder_prefix,epoch))
+                encoder.state_dict(),
+                os.path.join(
+                    config.models_dir, "{}-{}.pth".format(config.encoder_prefix, epoch)
+                ),
             )
         exp_lr_scheduler.step()
-    # f.close()

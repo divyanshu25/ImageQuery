@@ -17,7 +17,7 @@ from flask import make_response
 from flask_apispec import marshal_with, doc, use_kwargs
 from flask_apispec import MethodResource as Resource
 from captioning.schema import PopulateImageSchema
-from captioning.captioning_config import CaptioningConfig
+from captioning.captioning_config import Config
 from models import ImageCaptions, db
 from bert import bert_encoder
 import os
@@ -32,7 +32,7 @@ class PopulateImageData(Resource):
     @marshal_with(PopulateImageSchema, code=200)
     def get(self, **kwargs):
         print(os.getcwd())
-        data_file = CaptioningConfig.dummy_annotations_file
+        data_file = Config.dummy_annotations_file
         try:
             with open(data_file, "r") as f:
                 for l in f.readlines():

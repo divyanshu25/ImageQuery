@@ -28,7 +28,7 @@ class Vocabulary(object):
         self,
         vocab_threshold,
         vocab_file,
-        annotations_file,
+        # annotations_file,
         start_word="<start>",
         end_word="<end>",
         unk_word="<unk>",
@@ -50,18 +50,21 @@ class Vocabulary(object):
         self.start_word = start_word
         self.end_word = end_word
         self.unk_word = unk_word
-        self.annotations_file = annotations_file
+        # self.annotations_file = annotations_file
         self.vocab_from_file = vocab_from_file
         if os.path.exists(self.vocab_file) and self.vocab_from_file:
             with open(self.vocab_file, "rb") as f:
                 vocab = pickle.load(f)
                 self.word2idx = vocab.word2idx
                 self.idx2word = vocab.idx2word
-            print("Vocabulary successfully loaded from vocab.pkl file!")
+            self.idx = len(self.word2idx)
+            print(
+                "Vocabulary successfully loaded from {} file!".format(self.vocab_file)
+            )
         else:
             self.build_vocab()
-            with open(self.vocab_file, "wb") as f:
-                pickle.dump(self, f)
+            # with open(self.vocab_file, "wb") as f:
+            #     pickle.dump(self, f)
             print("Vocabulary successfully build from annotations file!")
 
     def build_vocab(self):
@@ -70,7 +73,7 @@ class Vocabulary(object):
         self.add_word(self.start_word)
         self.add_word(self.end_word)
         self.add_word(self.unk_word)
-        self.add_captions()
+        # self.add_captions()
 
     def init_vocab(self):
         """Initialize the dictionaries for converting tokens to integers (and vice-versa)."""
@@ -85,13 +88,13 @@ class Vocabulary(object):
             self.idx2word[self.idx] = word
             self.idx += 1
 
-    def add_captions(self):
+    def add_captions(self, ann_dict):
         """Loop over training captions and add all tokens to the vocabulary that meet or exceed the threshold."""
-        flickr_dict = parse_flickr(self.annotations_file)
+        # ann_dict = parse_flickr(self.annotations_file)
         counter = Counter()
-        ids = flickr_dict.keys()
+        ids = ann_dict.keys()
         for i, id in enumerate(ids):
-            caption = str(flickr_dict[id])
+            caption = str(ann_dict[id])
             tokens = nltk.tokenize.word_tokenize(caption.lower())
             counter.update(tokens)
 
@@ -99,9 +102,14 @@ class Vocabulary(object):
                 print("[%d/%d] Tokenizing captions..." % (i, len(ids)))
 
         words = [word for word, cnt in counter.items() if cnt >= self.vocab_threshold]
+        # print(words)
 
         for i, word in enumerate(words):
             self.add_word(word)
+
+    def dump_vocab_in_file(self):
+        with open(self.vocab_file, "wb") as f:
+            pickle.dump(self, f)
 
     def __call__(self, word):
         if not word in self.word2idx:

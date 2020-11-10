@@ -17,24 +17,22 @@ from collections import Counter
 
 from architecture.encoder import EncoderCNN
 from architecture.decoder import DecoderRNN
-from captioning.captioning_config import CaptioningConfig
-from data_handler.data_loader import get_data_loader
-from data_handler.utils import parse_flickr
+from captioning.captioning_config import Config as CaptioningConfig
+from data_handler.data_loader import get_data_loader, get_vocabulary
+from utils import convert_captions
 from train import train
 from inference import get_predict
-import torch.utils.data as data
-import pprint
-
 import torch.nn as nn
 import torch
-
 from utils import display_image
+
+config = CaptioningConfig()
 
 
 def execute():
-    if CaptioningConfig.run_training:
+    if config.run_training:
         train_and_validate()
-    if CaptioningConfig.run_prediction:
+    if config.run_prediction:
         predict()
 
 
@@ -43,9 +41,9 @@ def get_device():
 
 
 def print_stats(train_loader, val_loader):
-    print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
-    print("Total number of data points in train set:", len(train_loader.dataset))
-    print("Total number of data points in val set:", len(val_loader.dataset))
+    # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
+    # print("Total number of data points in train set:", len(train_loader.dataset))
+    # print("Total number of data points in val set:", len(val_loader.dataset))
 
     # print(dict(list(train_loader.dataset.vocab.word2idx.items())[:10]))
     # counter = Counter(train_loader.dataset.caption_lengths)
@@ -72,17 +70,14 @@ def print_stats(train_loader, val_loader):
 def train_and_validate():
     # Step1: Load Data and Visulaize
     device = get_device()
-    flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
-    train_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="train")
-    val_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="val")
-    vocab_size = len(train_loader.dataset.vocab)
+    train_loader = get_data_loader(config, mode="train", type=config.dataset_type)
+    val_loader = get_data_loader(config, mode="val", type=config.dataset_type)
+    vocab = get_vocabulary(config, type=config.dataset_type)
+    vocab_size = len(vocab)
     # print_stats(train_loader, val_loader)
-
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
-    encoder = EncoderCNN(CaptioningConfig.embed_size)
-    decoder = DecoderRNN(
-        CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size
-    )
+    encoder = EncoderCNN(config.embed_size)
+    decoder = DecoderRNN(config.embed_size, config.hidden_size, vocab_size)
     criterion = nn.CrossEntropyLoss()
 
     if device:
@@ -90,40 +85,47 @@ def train_and_validate():
         decoder = decoder.cuda()
         criterion = criterion.cuda()
     # Step3: Define Loss Function and optimizer
-    params = list(decoder.parameters()) + list(encoder.resnet.fc.parameters())
 
-    optimizer = torch.optim.Adam(params=params, lr=CaptioningConfig.learning_rate)
-    # optimizer = torch.optim.SGD(
-    #     params=params,
-    #     lr=Config.learning_rate,
-    #     momentum=Config.momentum,
-    #     weight_decay=Config.weight_decay,
-    # )
+    params = None
+    if config.train_encoder:
+        params = list(decoder.parameters()) + list(encoder.parameters())
+    else:
+        params = list(decoder.parameters()) + list(encoder.resnet.fc.parameters())
+
+    optimizer = torch.optim.Adam(params=params, lr=config.learning_rate)
 
     # Step4: Train the network.
-    if CaptioningConfig.load_from_file:
+    if config.load_from_file:
         print(
             "Loading encoder from {} and decoder from {} to resume training.".format(
-                CaptioningConfig.encoder_file, CaptioningConfig.decoder_file
+                config.encoder_file, config.decoder_file
             )
         )
-        encoder.load_state_dict(torch.load(CaptioningConfig.encoder_file))
-        decoder.load_state_dict(torch.load(CaptioningConfig.decoder_file))
+        if not torch.cuda.is_available():
+            encoder.load_state_dict(
+                torch.load(config.encoder_file, map_location=torch.device("cpu"))
+            )
+            decoder.load_state_dict(
+                torch.load(config.decoder_file, map_location=torch.device("cpu"))
+            )
+        else:
+            encoder.load_state_dict(torch.load(config.encoder_file))
+            decoder.load_state_dict(torch.load(config.decoder_file))
 
-    train(encoder, decoder, optimizer, criterion, train_loader, val_loader, device)
+    train(
+        encoder, decoder, optimizer, criterion, train_loader, val_loader, device, vocab
+    )
 
 
 def predict():
-    flickr_ann_dict = parse_flickr(CaptioningConfig.annotations_file)
-    test_loader = get_data_loader(CaptioningConfig, flickr_ann_dict, mode="test")
-    vocab_size = len(test_loader.dataset.vocab)
+    test_loader = get_data_loader(config, mode="test", type=config.dataset_type)
+    vocab = get_vocabulary(config, type=config.dataset_type)
+    vocab_size = len(vocab)
 
     device = get_device()
 
-    encoder = EncoderCNN(CaptioningConfig.embed_size)
-    decoder = DecoderRNN(
-        CaptioningConfig.embed_size, CaptioningConfig.hidden_size, vocab_size
-    )
+    encoder = EncoderCNN(config.embed_size)
+    decoder = DecoderRNN(config.embed_size, config.hidden_size, vocab_size)
     if device:
         encoder = encoder.cuda()
         decoder = decoder.cuda()
@@ -132,24 +134,19 @@ def predict():
     decoder.eval()
     if not torch.cuda.is_available():
         encoder.load_state_dict(
-            torch.load(CaptioningConfig.encoder_file, map_location=torch.device("cpu"))
+            torch.load(config.encoder_file, map_location=torch.device("cpu"))
         )
         decoder.load_state_dict(
-            torch.load(CaptioningConfig.decoder_file, map_location=torch.device("cpu"))
+            torch.load(config.decoder_file, map_location=torch.device("cpu"))
         )
     else:
-        encoder.load_state_dict(torch.load(CaptioningConfig.encoder_file))
-        decoder.load_state_dict(torch.load(CaptioningConfig.decoder_file))
+        encoder.load_state_dict(torch.load(config.encoder_file))
+        decoder.load_state_dict(torch.load(config.decoder_file))
 
-    indices = test_loader.dataset.get_train_indices()
-    new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
-    test_loader.batch_sampler.sampler = new_sampler
-
-    images, captions = next(iter(test_loader))
+    images, captions = convert_captions(next(iter(test_loader)), vocab, config)
     if device:
         images = images.cuda()
-    # imshow(orig_image)
-    get_predict(images, captions, encoder, decoder, test_loader)
+    get_predict(images, encoder, decoder, vocab, captions)
 
 
 if __name__ == "__main__":
