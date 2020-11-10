@@ -15,16 +15,13 @@
 #   ==================================================================
 
 from config import Config
-from data_handler.data_loader import get_data_loader
+from data_handler.data_loader import get_flickr_data_loader
 from utils import imshow, clean_sentence
 
 
 def get_predict(images, encoder, decoder, vocab, captions=None):
-    # image = image.to(device)
-    # print(images.shape)
     for i in range(images.shape[0]):
         image = images[i].unsqueeze(0)
-        print(image.shape)
         features = encoder(image).unsqueeze(1)
         output = decoder.sample(features)
         for index, s in enumerate(output):

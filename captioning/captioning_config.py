@@ -18,50 +18,86 @@ import os
 from config import ROOT_DIR
 
 
-class CaptioningConfig:
+class BaseConfig:
+    def __init__(self):
+        self.dataset_type = "flickr8k"  # Supported types: 'flickr8k', 'coco'
+        self.models_dir = os.path.join(ROOT_DIR, "captioning/models")
+        self.data_dir = os.path.join(ROOT_DIR, "captioning/data/")
+        self.enable_wandb = False
+        self.verbose = True
+
+
+class COCO_Config(BaseConfig):
+    def __init__(self):
+        super(COCO_Config, self).__init__()
+        self.test_root_dir_coco = (
+            "/Users/shubhi/GT_courses/DeepLearning/project/coco_captioning/test2017"
+        )
+        # test_root_dir_coco = "/home/shubhi_agl22/datasets/coco_captioning/test2017"
+        self.train_root_dir_coco = (
+            "/home/shubhi_agl22/datasets/coco_captioning/train2017"
+        )
+        self.val_root_dir_coco = "/home/shubhi_agl22/datasets/coco_captioning/val2017"
+        self.train_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/captions_train2017.json"
+        self.val_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/captions_val2017.json"
+        # test_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/image_info_test2017.json"
+        self.test_ann_file_coco = "/Users/shubhi/GT_courses/DeepLearning/project/coco_captioning/image_info_test2017.json"
+        self.coco_subset_size = 30000
+
+
+class Flickr_Config(BaseConfig):
+    def __init__(self):
+        super(Flickr_Config, self).__init__()
+        self.annotations_file = os.path.join(
+            self.data_dir, "flickr/Flickr8k_text/Flickr8k.token.txt"
+        )
+        self.images_dir = os.path.join(self.data_dir, "flickr/Flicker8k_Dataset")
+        self.train_id_file = os.path.join(
+            self.data_dir, "flickr/Flickr8k_text/Flickr_8k.trainImages.txt"
+        )
+        self.val_id_file = os.path.join(
+            self.data_dir, "flickr/Flickr8k_text/Flickr_8k.devImages.txt"
+        )
+        self.test_id_file = os.path.join(
+            self.data_dir, "flickr/Flickr8k_text/Flickr_8k.testImages.txt"
+        )
+
+
+class Config(Flickr_Config, COCO_Config):
     """Base config."""
 
-    dataset_type = "coco"  # Supported types: 'flickr8k', 'coco'
-    data_dir = os.path.join(ROOT_DIR, "captioning/data")
-    models_dir = os.path.join(ROOT_DIR, "captioning/models")
-    dummy_annotations_file = os.path.join(
-        data_dir, "Flickr8k_text/Flickr8k_dummy.token.txt"
-    )
-    encoder_prefix = 'encoder_30k_naive'
-    decoder_prefix = 'decoder_30k_naive'
-    annotations_file = os.path.join(data_dir, "Flickr8k_text/Flickr8k.token.txt")
-    images_dir = os.path.join(data_dir, "Flickr8k_Dataset")
-    train_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.trainImages.txt")
-    val_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.devImages.txt")
-    test_id_file = os.path.join(data_dir, "Flickr8k_text/Flickr_8k.testImages.txt")
-    test_root_dir_coco = "/Users/shubhi/GT_courses/DeepLearning/project/coco_captioning/test2017"
-    #test_root_dir_coco = "/home/shubhi_agl22/datasets/coco_captioning/test2017"
-    train_root_dir_coco = "/home/shubhi_agl22/datasets/coco_captioning/train2017"
-    val_root_dir_coco = "/home/shubhi_agl22/datasets/coco_captioning/val2017"
-    train_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/captions_train2017.json"
-    val_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/captions_val2017.json"
-    #test_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/image_info_test2017.json"
-    test_ann_file_coco = "/Users/shubhi/GT_courses/DeepLearning/project/coco_captioning/image_info_test2017.json"
-    vocab_file = os.path.join(data_dir, "vocab_{}.pkl".format(dataset_type))
-    encoder_file = os.path.join(models_dir, "encoder_30k_naive-2.pth")
-    decoder_file = os.path.join(models_dir, "decoder_30k_naive-2.pth")
-    batch_size = 8  # batch size
-    vocab_threshold = 5  # minimum word count threshold
-    vocab_from_file = True  # if True, load existing vocab file
-    embed_size = 300  # dimensionality of image and word embeddings
-    hidden_size = 512  # number of features in hidden state of the RNN decoder
-    epoch_range = range(1, 20)  # number of training epochs
-    save_every = 1  # determines frequency of saving model weights
-    print_every = 10  # determines window for printing average loss
-    num_workers = 2
-    load_from_file = False
-    run_training = False
-    run_prediction = True
-    learning_rate = 0.001
-    scheduler_gamma = 0.95
-    momentum = 0.9
-    weight_decay = 0.99  # l2 norm strength
-    log_file = "training.log"  # name of file with saved training loss and perplexity
-    beam_size = 3
-    max_length = 40
-    verbose = True
+    def __init__(self):
+        super(Config, self).__init__()
+        self.encoder_prefix = "encoder_flickr"
+        self.decoder_prefix = "decoder_flickr"
+        self.encoder_file = os.path.join(
+            self.models_dir, "{}-2.pth".format(self.encoder_prefix)
+        )
+        self.decoder_file = os.path.join(
+            self.models_dir, "{}-2.pth".format(self.decoder_prefix)
+        )
+        self.vocab_file = os.path.join(
+            self.data_dir, "vocab_{}.pkl".format(self.dataset_type)
+        )
+        self.batch_size = 8  # batch size
+        self.vocab_threshold = 5  # minimum word count threshold
+        self.vocab_from_file = True  # if True, load existing vocab file
+        self.embed_size = 300  # dimensionality of image and word embeddings
+        self.hidden_size = 512  # number of features in hidden state of the RNN decoder
+        self.epoch_range = range(1, 20)  # number of training epochs
+        self.save_every = 1  # determines frequency of saving model weights
+        self.print_every = 10  # determines window for printing average loss
+        self.num_workers = 2
+        self.load_from_file = False
+        self.run_training = True
+        self.run_prediction = False
+        self.learning_rate = 0.001
+        self.scheduler_gamma = 0.95
+        self.momentum = 0.9
+        self.weight_decay = 0.99  # l2 norm strength
+        self.log_file = (
+            "training.log"
+        )  # name of file with saved training loss and perplexity
+        self.beam_size = 3
+        self.max_length = 40
+        self.train_encoder = False

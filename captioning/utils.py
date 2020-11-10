@@ -14,7 +14,7 @@
 #   limitations under the License.
 #   ==================================================================
 
-from captioning_config import CaptioningConfig as Config
+from captioning_config import Config as Config
 import matplotlib.pyplot as plt
 import numpy as np
 import nltk
@@ -46,19 +46,19 @@ def clean_sentence(output, vocab):
     for i in output:
         words_sequence.append(vocab.idx2word[i])
 
-    #words_sequence = words_sequence[1:-1]
+    words_sequence = words_sequence[1:-1]
     sentence = " ".join(words_sequence)
     sentence = sentence.capitalize()
 
     return sentence
 
 
-def convert_captions(input, vocab):
+def convert_captions(input, vocab, config):
     images, target = input
     all_captions = None
 
     if len(target) > 0:
-        if not len(target) == Config.batch_size:
+        if not len(target) == config.batch_size:
             target = target[0]
         all_captions = []
         for c in target:
@@ -67,9 +67,9 @@ def convert_captions(input, vocab):
             caption.append(vocab(vocab.start_word))
             caption.extend([vocab(token) for token in tokens])
             caption.append(vocab(vocab.end_word))
-            for i in range(Config.max_length - len(caption)):
+            for i in range(config.max_length - len(caption)):
                 caption.append(vocab(vocab.end_word))
-            caption = caption[0:Config.max_length-1]
+            caption = caption[0 : config.max_length - 1]
             caption.append(vocab(vocab.end_word))
             all_captions.append(caption)
         # caption = caption[:1]

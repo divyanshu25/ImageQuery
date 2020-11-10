@@ -58,7 +58,9 @@ class Vocabulary(object):
                 self.word2idx = vocab.word2idx
                 self.idx2word = vocab.idx2word
             self.idx = len(self.word2idx)
-            print("Vocabulary successfully loaded from {} file!".format(self.vocab_file))
+            print(
+                "Vocabulary successfully loaded from {} file!".format(self.vocab_file)
+            )
         else:
             self.build_vocab()
             # with open(self.vocab_file, "wb") as f:
@@ -71,7 +73,7 @@ class Vocabulary(object):
         self.add_word(self.start_word)
         self.add_word(self.end_word)
         self.add_word(self.unk_word)
-        #self.add_captions()
+        # self.add_captions()
 
     def init_vocab(self):
         """Initialize the dictionaries for converting tokens to integers (and vice-versa)."""
@@ -88,7 +90,7 @@ class Vocabulary(object):
 
     def add_captions(self, ann_dict):
         """Loop over training captions and add all tokens to the vocabulary that meet or exceed the threshold."""
-        #ann_dict = parse_flickr(self.annotations_file)
+        # ann_dict = parse_flickr(self.annotations_file)
         counter = Counter()
         ids = ann_dict.keys()
         for i, id in enumerate(ids):

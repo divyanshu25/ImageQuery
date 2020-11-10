@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-from captioning_config import CaptioningConfig as Config
+from captioning_config import Config as Config
 
 
 class DecoderRNN(nn.Module):
