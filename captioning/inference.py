@@ -14,9 +14,7 @@
 #   limitations under the License.
 #   ==================================================================
 
-from config import Config
-from data_handler.data_loader import get_flickr_data_loader
-from utils import imshow, clean_sentence
+from captioning.utils import imshow, clean_sentence
 
 
 def get_predict(images, encoder, decoder, vocab, captions=None):
@@ -28,5 +26,5 @@ def get_predict(images, encoder, decoder, vocab, captions=None):
             sentence = clean_sentence(s, vocab)
             print("Predicted Caption {}: ".format(index) + str(sentence))
         if captions is not None:
-            print("Original Caption: " + str(captions[i]))
-        imshow(image[0])
+            print("Original Caption: " + clean_sentence(captions[i].cpu().numpy(), vocab))
+        # imshow(image[0])

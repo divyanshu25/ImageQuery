@@ -15,12 +15,12 @@
 #   ==================================================================
 from flask import Blueprint, request, make_response
 from flask_restful import Api
-from captioning.views import PopulateImageData
+from captioning.views import PopulateFlickrData
 
 captioning_bp = Blueprint("captioning", __name__, url_prefix="/")
 api = Api(captioning_bp)
-api.add_resource(PopulateImageData, "populate/", endpoint="populate")
+api.add_resource(PopulateFlickrData, "populate/flickr/", endpoint="populate")
 
 
 def register_captioning_in_docs(docs):
-    docs.register(PopulateImageData, endpoint="captioning.populate")
+    docs.register(PopulateFlickrData, endpoint="captioning.populate")

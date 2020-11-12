@@ -15,16 +15,16 @@
 #   ==================================================================
 from collections import Counter
 
-from architecture.encoder import EncoderCNN
-from architecture.decoder import DecoderRNN
+from captioning.architecture.encoder import EncoderCNN
+from captioning.architecture.decoder import DecoderRNN
 from captioning.captioning_config import Config as CaptioningConfig
-from data_handler.data_loader import get_data_loader, get_vocabulary
-from utils import convert_captions
-from train import train
-from inference import get_predict
+from captioning.data_handler.data_loader import get_data_loader, get_vocabulary
+from captioning.utils import convert_captions
+from captioning.train import train
+from captioning.inference import get_predict
 import torch.nn as nn
 import torch
-from utils import display_image
+# from utils import display_image
 
 config = CaptioningConfig()
 
@@ -143,7 +143,8 @@ def predict():
         encoder.load_state_dict(torch.load(config.encoder_file))
         decoder.load_state_dict(torch.load(config.decoder_file))
 
-    images, captions = convert_captions(next(iter(test_loader)), vocab, config)
+    images, captions, _ = next(iter(test_loader))
+    images, captions = convert_captions(images, captions, vocab, config)
     if device:
         images = images.cuda()
     get_predict(images, encoder, decoder, vocab, captions)
