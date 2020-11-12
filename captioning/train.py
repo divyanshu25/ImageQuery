@@ -34,16 +34,17 @@ def validate(val_loader, encoder, decoder, criterion, device, vocab):
         decoder.eval()
 
         val_images, val_captions, _ = next(iter(val_loader))
-        val_images, val_captions = convert_captions(
+        val_images, val_captions, caption_lengths = convert_captions(
             val_images, val_captions, vocab, config
         )
         if device:
             val_images = val_images.cuda()
             val_captions = val_captions.cuda()
+            caption_lengths = caption_lengths.cuda()
 
         # Pass the inputs through the CNN-RNN model.
         features = encoder(val_images)
-        outputs = decoder(features, val_captions)
+        outputs = decoder(features, val_captions, caption_lengths)
 
         # Calculate the batch loss.
         val_loss = criterion(outputs.view(-1, vocab_size), val_captions.view(-1))
@@ -68,6 +69,7 @@ def train(
     if config.enable_wandb:
         wandb.watch(encoder)
         wandb.watch(decoder)
+
     encoder.train()
     decoder.train()
     for epoch in config.epoch_range:
@@ -82,10 +84,12 @@ def train(
             if device:
                 images = images.cuda()
                 captions = captions.cuda()
+                caption_lengths = caption_lengths.cuda()
+
             # Pass the inputs through the CNN-RNN model.
             features = encoder(images)
             # print(features.shape)
-            outputs = decoder(features, captions)
+            outputs = decoder(features, captions, caption_lengths)
             # print(outputs.view(-1, vocab_size).shape, captions.contiguous().view(-1).shape)
             # return
             # Calculate the batch loss

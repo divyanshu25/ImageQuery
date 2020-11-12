@@ -101,3 +101,7 @@ class Config(Flickr_Config, COCO_Config):
         self.beam_size = 5
         self.max_length = 40
         self.train_encoder = False
+        self.encoder_name = "kwtl"
+        self.decoder_name = "kwtl"
+        self.decoderkwtl_attdim = 512
+        self.decoderkwtl_encodeddim = 2048

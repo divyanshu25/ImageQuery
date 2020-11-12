@@ -17,6 +17,7 @@
 
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
 import torchvision.models as models
 from captioning.captioning_config import Config
 
@@ -37,3 +38,10 @@ class EncoderCNN(nn.Module):
         # features = features.view(features.size(0), -1)
         # features = self.embed(features)
         return features
+
+    def get_learning_parameters(self):
+        if config.train_encoder:
+            params = list(self.resnet.parameters())
+        else:
+            params = list(self.resnet.fc.parameters())
+        return params

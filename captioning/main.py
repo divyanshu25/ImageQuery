@@ -14,9 +14,9 @@
 #   limitations under the License.
 #   ==================================================================
 from collections import Counter
-
-from captioning.architecture.encoder import EncoderCNN
-from captioning.architecture.decoder import DecoderRNN
+from architecture.encoder import EncoderCNN
+from architecture.decoder import DecoderRNN
+from architecture.archpicker import get_encoder_decoder
 from captioning.captioning_config import Config as CaptioningConfig
 from captioning.data_handler.data_loader import get_data_loader, get_vocabulary
 from captioning.utils import convert_captions
@@ -77,8 +77,7 @@ def train_and_validate():
     vocab_size = len(vocab)
     # print_stats(train_loader, val_loader)
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
-    encoder = EncoderCNN(config.embed_size)
-    decoder = DecoderRNN(config.embed_size, config.hidden_size, vocab_size)
+    encoder, decoder = get_encoder_decoder(config.embed_size, config.hidden_size, vocab_size)
     criterion = nn.CrossEntropyLoss()
 
     if device:
@@ -87,11 +86,7 @@ def train_and_validate():
         criterion = criterion.cuda()
     # Step3: Define Loss Function and optimizer
 
-    params = None
-    if config.train_encoder:
-        params = list(decoder.parameters()) + list(encoder.parameters())
-    else:
-        params = list(decoder.parameters()) + list(encoder.resnet.fc.parameters())
+    params = list(decoder.parameters()) + encoder.get_learning_parameters()
 
     optimizer = torch.optim.Adam(params=params, lr=config.learning_rate)
 

@@ -58,24 +58,32 @@ def clean_sentence(output, vocab):
 def convert_captions(images, target, vocab, config):
     # images, target = input
     all_captions = None
+    caption_lengths = None
 
     if len(target) > 0:
         if not len(target) == config.batch_size:
             target = target[0]
         all_captions = []
+        caption_lengths = []
         for c in target:
             caption = []
             tokens = nltk.tokenize.word_tokenize(str(c).lower())
             caption.append(vocab(vocab.start_word))
             caption.extend([vocab(token) for token in tokens])
             caption.append(vocab(vocab.end_word))
-            if len(caption) >= config.max_length:
-                caption = caption[0 : config.max_length - 1]
+            clength = len(caption) + 2 # Accounting for start and end word
+            for i in range(config.max_length - len(caption)):
                 caption.append(vocab(vocab.end_word))
             else:
                 for i in range(config.max_length - len(caption)):
                     caption.append(vocab(vocab.pad_word))
             all_captions.append(caption)
+
+            # Store the real length of the caption
+            if clength > config.max_length:
+                clength = config.max_length
+            caption_lengths.append(len(caption))
         # caption = caption[:1]
         all_captions = torch.Tensor(all_captions).long()
-    return images, all_captions
+        caption_lengths = torch.Tensor(caption_lengths).unsqueeze(1).long()
+    return images, all_captions, caption_lengths

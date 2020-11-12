@@ -41,7 +41,7 @@ class DecoderRNN(nn.Module):
         self.linear = nn.Linear(hidden_size, vocab_size)
         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, features, captions):
+    def forward(self, features, captions, caption_lengths):
         captions = captions[:, :-1]
         # print(captions.shape)
         embed = self.embedding_layer(captions)
@@ -101,3 +101,5 @@ class DecoderRNN(nn.Module):
         for beam in ordered[:beam_size]:
             output_sentences.append(beam[3])
         return output_sentences
+
+
