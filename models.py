@@ -19,7 +19,6 @@ from image_query_app import db
 
 class ImageCaptions(db.Model):
     """Data model for Image captions."""
-
     __tablename__ = "ImageCaptions"
     image_path = db.Column(
         db.String(64), primary_key=True, index=True, unique=False, nullable=False
@@ -27,7 +26,8 @@ class ImageCaptions(db.Model):
     caption_index = db.Column(db.Integer, primary_key=True, nullable=False)
     set = db.Column(db.String(64), index=True, unique=False, nullable=True)
     # index 5 is the generated caption
+    # 1 2 3 4 5, 6 7 8
     caption = db.Column(db.String(1024), index=False, unique=False, nullable=True)
-    encoded_caption = db.Column(
-        db.String(1024), index=False, unique=False, nullable=True
-    )
+    # encoded_caption = db.Column(
+    #     db.String(1024), index=False, unique=False, nullable=True
+    # )

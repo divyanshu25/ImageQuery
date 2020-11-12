@@ -20,8 +20,28 @@ from marshmallow import fields, Schema, validate
 class PopulateImageSchema(Schema):
     status = fields.Str(
         required=True,
-        validate=validate.OneOf(["Data Upload Success", "Data Upload Failed"]),
+        validate=validate.OneOf(
+            ["Data Upload Success", "Data Upload Failed", "Invalid Set"]
+        ),
     )
+
+    class Meta:
+        strict = True
+
+
+class BleuScoreSchema(Schema):
+    status = fields.Str(
+        required=True, validate=validate.OneOf(["Invalid set or model name"])
+    )
+    bleu_Score = fields.Float(required=True)
+
+    class Meta:
+        strict = True
+
+
+class PopulateSearchSchema(Schema):
+    status = fields.Str(required=True, validate=validate.OneOf(["Invalid model name"]))
+    image_ids = fields.Str(required=True)
 
     class Meta:
         strict = True

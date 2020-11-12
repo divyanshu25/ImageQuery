@@ -17,8 +17,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-from captioning_config import Config as Config
+# from captioning_config import Config as Config
+from captioning.captioning_config import Config
 
+config = Config()
 
 class DecoderRNN(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, num_layers=1):
@@ -54,7 +56,7 @@ class DecoderRNN(nn.Module):
         """ accepts pre-processed image tensor (inputs) and
         returns predicted sentence (list of tensor ids of length max_len) """
         # input 1,300
-        beam_size = Config.beam_size
+        beam_size = config.beam_size
         sequences = [
             [1.0, inputs, states, []]
         ]  # [Value, inputs, states, output_sentence]

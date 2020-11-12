@@ -90,14 +90,14 @@ class Flickr8kCustom(Dataset):
             if self.transform is not None:
                 img = self.transform(img)
 
-            return img, target
+            return img, target, img_id
         else:
             image = np.array(img)
             caption = self.ann_dict[img_id]
             if self.transform is not None:
-                image = self.transform(img)
+                img = self.transform(img)
             # return original image and pre-processed image tensor
-            return image, caption
+            return img, caption, img_id
 
     def get_train_indices(self):
         sel_length = np.random.choice(self.caption_lengths)

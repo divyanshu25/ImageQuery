@@ -14,11 +14,11 @@
 #   limitations under the License.
 #   ==================================================================
 
-from captioning_config import Config
+from captioning.captioning_config import Config
 import torch
 import math
 import os
-from utils import convert_captions, clean_sentence
+from captioning.utils import convert_captions, clean_sentence
 import wandb
 
 config = Config()
@@ -76,7 +76,8 @@ def train(
             decoder.zero_grad()
             encoder.zero_grad()
             # Obtain the batch.
-            images, captions = convert_captions(next(iter(train_loader)), vocab, config)
+            images, captions, _ = next(iter(train_loader))
+            images, captions = convert_captions(images, captions, vocab, config)
             if device:
                 images = images.cuda()
                 captions = captions.cuda()

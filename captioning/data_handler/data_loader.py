@@ -21,9 +21,9 @@ from torch.utils.data import Dataset, DataLoader, sampler, Subset
 from torchvision import transforms
 import torchvision.datasets as dset
 
-from data_handler.flickr_dataset import Flickr8kCustom
-from data_handler.vocabulary import Vocabulary
-from data_handler.utils import parse_flickr, parse_coco
+from captioning.data_handler.flickr_dataset import Flickr8kCustom
+from captioning.data_handler.vocabulary import Vocabulary
+from captioning.data_handler.utils import parse_flickr, parse_coco
 
 
 def get_data_loader(config, mode="train", type="flickr8k"):
