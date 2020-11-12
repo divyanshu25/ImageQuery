@@ -68,13 +68,13 @@ class Config(Flickr_Config, COCO_Config):
 
     def __init__(self):
         super(Config, self).__init__()
-        self.encoder_prefix = "encoder_flickr"
-        self.decoder_prefix = "decoder_flickr"
+        self.encoder_prefix = "encoder"
+        self.decoder_prefix = "decoder"
         self.encoder_file = os.path.join(
-            self.models_dir, "{}-2.pth".format(self.encoder_prefix)
+            self.models_dir, "{}-16.pth".format(self.encoder_prefix)
         )
         self.decoder_file = os.path.join(
-            self.models_dir, "{}-2.pth".format(self.decoder_prefix)
+            self.models_dir, "{}-16.pth".format(self.decoder_prefix)
         )
         self.vocab_file = os.path.join(
             self.data_dir, "vocab_{}.pkl".format(self.dataset_type)
@@ -89,8 +89,8 @@ class Config(Flickr_Config, COCO_Config):
         self.print_every = 10  # determines window for printing average loss
         self.num_workers = 2
         self.load_from_file = False
-        self.run_training = True
-        self.run_prediction = False
+        self.run_training = False
+        self.run_prediction = True
         self.learning_rate = 0.001
         self.scheduler_gamma = 0.95
         self.momentum = 0.9

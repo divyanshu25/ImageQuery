@@ -20,8 +20,6 @@ nltk.download("punkt")
 import pickle
 import os.path
 from collections import Counter
-from data_handler.utils import parse_flickr
-
 
 class Vocabulary(object):
     def __init__(
