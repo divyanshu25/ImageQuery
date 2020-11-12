@@ -21,6 +21,7 @@ import pickle
 import os.path
 from collections import Counter
 
+
 class Vocabulary(object):
     def __init__(
         self,

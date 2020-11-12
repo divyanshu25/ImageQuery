@@ -70,7 +70,7 @@ class PopulateFlickrData(Resource):
             len(data_loader.dataset) / data_loader.batch_sampler.batch_size
         )
         for i in range(total_step):
-            print("step: {}",format(i))
+            print("step: {}", format(i))
             images, captions, image_ids = next(iter(data_loader))
             images, captions = convert_captions(images, captions, vocab, config)
             if device:
@@ -84,8 +84,10 @@ class PopulateFlickrData(Resource):
                     sentence = clean_sentence(s, vocab)
                     print("Predicted Caption {}: ".format(index) + str(sentence))
                 if captions is not None:
-                    print("Original Caption: " + clean_sentence(captions[k].cpu().numpy(), vocab))
-
+                    print(
+                        "Original Caption: "
+                        + clean_sentence(captions[k].cpu().numpy(), vocab)
+                    )
 
         # print(os.getcwd())
         # data_file = Config.dummy_annotations_file

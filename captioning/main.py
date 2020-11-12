@@ -24,6 +24,7 @@ from captioning.train import train
 from captioning.inference import get_predict
 import torch.nn as nn
 import torch
+
 # from utils import display_image
 
 config = CaptioningConfig()

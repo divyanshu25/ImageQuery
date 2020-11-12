@@ -30,18 +30,18 @@ class BaseConfig:
 class COCO_Config(BaseConfig):
     def __init__(self):
         super(COCO_Config, self).__init__()
-        self.test_root_dir_coco = (
-            "/Users/shubhi/GT_courses/DeepLearning/project/coco_captioning/test2017"
+        self.test_root_dir_coco = os.path.join(self.data_dir, "coco/test2017")
+        self.train_root_dir_coco = os.path.join(self.data_dir, "coco/train2017")
+        self.val_root_dir_coco = os.path.join(self.data_dir, "coco/val2017")
+        self.train_ann_file_coco = os.path.join(
+            self.data_dir, "coco/captions_train2017.json"
         )
-        # test_root_dir_coco = "/home/shubhi_agl22/datasets/coco_captioning/test2017"
-        self.train_root_dir_coco = (
-            "/home/shubhi_agl22/datasets/coco_captioning/train2017"
+        self.val_ann_file_coco = os.path.join(
+            self.data_dir, "coco/captions_val2017.json"
         )
-        self.val_root_dir_coco = "/home/shubhi_agl22/datasets/coco_captioning/val2017"
-        self.train_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/captions_train2017.json"
-        self.val_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/captions_val2017.json"
-        # test_ann_file_coco = "/home/shubhi_agl22/datasets/coco_captioning/annotations/image_info_test2017.json"
-        self.test_ann_file_coco = "/Users/shubhi/GT_courses/DeepLearning/project/coco_captioning/image_info_test2017.json"
+        self.test_ann_file_coco = os.path.join(
+            self.data_dir, "coco/image_info_test2017.json"
+        )
         self.coco_subset_size = 30000
 
 
@@ -91,6 +91,7 @@ class Config(Flickr_Config, COCO_Config):
         self.load_from_file = False
         self.run_training = False
         self.run_prediction = True
+
         self.learning_rate = 0.001
         self.scheduler_gamma = 0.95
         self.momentum = 0.9
