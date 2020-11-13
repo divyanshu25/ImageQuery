@@ -15,16 +15,20 @@
 # ==================================================================
 
 from .encoder import EncoderCNN
-from .encoderkwtl import EncoderKWTL
 from .decoder import DecoderRNN
+from .encoderkwtl import EncoderKWTL
 from .decoderkwtl import DecoderKWTL
+from .encoderattn import EncoderAttn
+from .decoderattn import DecoderAttn
 
 from captioning_config import Config as Config
 
 config = Config()
 
 def get_encoder_decoder(embed_size, hidden_size, vocab_size):
-    if config.encoder_name == "vannila":
+    if config.arch_name == "vannila":
         return (EncoderCNN(embed_size), DecoderRNN(embed_size, hidden_size, vocab_size))
+    elif config.arch_name == "attention":
+        return (EncoderAttn(embed_size), DecoderAttn(embed_size, hidden_size, vocab_size))
     else:
         return (EncoderKWTL(embed_size), DecoderKWTL(embed_size, hidden_size, vocab_size))
