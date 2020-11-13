@@ -25,10 +25,17 @@ from captioning_config import Config as Config
 
 config = Config()
 
+
 def get_encoder_decoder(embed_size, hidden_size, vocab_size):
     if config.arch_name == "vannila":
         return (EncoderCNN(embed_size), DecoderRNN(embed_size, hidden_size, vocab_size))
     elif config.arch_name == "attention":
-        return (EncoderAttn(embed_size), DecoderAttn(embed_size, hidden_size, vocab_size))
+        return (
+            EncoderAttn(embed_size),
+            DecoderAttn(embed_size, hidden_size, vocab_size),
+        )
     else:
-        return (EncoderKWTL(embed_size), DecoderKWTL(embed_size, hidden_size, vocab_size))
+        return (
+            EncoderKWTL(embed_size),
+            DecoderKWTL(embed_size, hidden_size, vocab_size),
+        )

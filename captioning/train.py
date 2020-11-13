@@ -20,6 +20,8 @@ import math
 import os
 from captioning.utils import convert_captions, clean_sentence
 import wandb
+from torch.nn.utils.rnn import pack_padded_sequence
+
 
 config = Config()
 if config.enable_wandb:
@@ -44,10 +46,12 @@ def validate(val_loader, encoder, decoder, criterion, device, vocab):
 
         # Pass the inputs through the CNN-RNN model.
         features = encoder(val_images)
-        outputs = decoder(features, val_captions, caption_lengths)
-
-        # Calculate the batch loss.
-        val_loss = criterion(outputs.view(-1, vocab_size), val_captions.view(-1))
+        outputs, caps_sorted, decode_lengths, alphas, sort_ind = decoder(features, val_captions, caption_lengths)
+        targets = caps_sorted[:, 1:]
+        scores = pack_padded_sequence(outputs, decode_lengths, batch_first=True)
+        targets = pack_padded_sequence(targets, decode_lengths, batch_first=True)
+        val_loss = criterion(scores.data, targets.data)
+        val_loss += 1 * ((1. - alphas.sum(dim=1)) ** 2).mean()
         encoder.train()
         decoder.train()
         return val_loss
@@ -79,8 +83,11 @@ def train(
             decoder.zero_grad()
             encoder.zero_grad()
             # Obtain the batch.
-            images, captions, _ = next(iter(train_loader))
-            images, captions = convert_captions(images, captions, vocab, config)
+            images, captions, caption_lengths = convert_captions(
+                next(iter(train_loader)), vocab, config
+            )
+            # print("Images: {}, captions:{}, caption_lengths:{}".format(images.size(), captions, caption_lengths))
+            # Checkpoint[1]
             if device:
                 images = images.cuda()
                 captions = captions.cuda()
@@ -89,16 +96,25 @@ def train(
             # Pass the inputs through the CNN-RNN model.
             features = encoder(images)
             # print(features.shape)
-            outputs = decoder(features, captions, caption_lengths)
-            # print(outputs.view(-1, vocab_size).shape, captions.contiguous().view(-1).shape)
+            # Checkpoint[2]
+            outputs, caps_sorted, decode_lengths, alphas, sort_ind = decoder(features, captions, caption_lengths)
+            # print(f"Output:{outputs.size()}, cap_sorted:{caps_sorted}, decode_len:{decode_lengths},"
+            #       f"alphas: {alphas.size()}, sortind:{sort_ind}")
+            #Checkpoint[3]
+            targets = caps_sorted[:, 1:]
+            # print(f"scores:{outputs}, targets:{targets}")
+            scores = pack_padded_sequence(outputs, decode_lengths, batch_first=True)
+            targets = pack_padded_sequence(targets, decode_lengths, batch_first=True)
+            # print(f"scores:{scores.data},\n "
+            #       f"targets:{targets.data}")
             # return
+            #Checkpoint[4]
             # Calculate the batch loss
-            loss = criterion(
-                # outputs.view(-1, vocab_size), captions_target.contiguous().view(-1)
-                outputs.view(-1, vocab_size),
-                captions.contiguous().view(-1),
-            )
-            if config.verbose and i_step == total_step:
+
+            loss = criterion(scores.data, targets.data)
+            loss += 1 * ((1. - alphas.sum(dim=1)) ** 2).mean()
+
+            if config.verbose and i_step == total_step and epoch%10 == 0:
                 for batch in range(min(config.batch_size, 10)):
                     curr_pred_vec = outputs[batch, :, :]
                     predicted_caption = torch.max(curr_pred_vec, dim=1)
