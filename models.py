@@ -28,6 +28,6 @@ class ImageCaptions(db.Model):
     set = db.Column(db.String(64), index=True, unique=False, nullable=True)
     # index 5 is the generated caption
     caption = db.Column(db.String(1024), index=False, unique=False, nullable=True)
-    encoded_caption = db.Column(
-        db.String(1024), index=False, unique=False, nullable=True
-    )
+    # encoded_caption = db.Column(
+    #     db.String(1024), index=False, unique=False, nullable=True
+    # )
