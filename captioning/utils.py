@@ -71,18 +71,16 @@ def convert_captions(images, target, vocab, config):
             caption.append(vocab(vocab.start_word))
             caption.extend([vocab(token) for token in tokens])
             caption.append(vocab(vocab.end_word))
-            clength = len(caption) + 2 # Accounting for start and end word
-            for i in range(config.max_length - len(caption)):
-                caption.append(vocab(vocab.end_word))
-            else:
+            cap_length = len(caption)
+            if cap_length < config.max_length:
                 for i in range(config.max_length - len(caption)):
                     caption.append(vocab(vocab.pad_word))
+            else:
+                caption = caption[0 : config.max_length - 1]
+                caption.append(vocab(vocab.end_word))
+                cap_length = len(caption)
+            caption_lengths.append(cap_length)
             all_captions.append(caption)
-
-            # Store the real length of the caption
-            if clength > config.max_length:
-                clength = config.max_length
-            caption_lengths.append(len(caption))
         # caption = caption[:1]
         all_captions = torch.Tensor(all_captions).long()
         caption_lengths = torch.Tensor(caption_lengths).unsqueeze(1).long()

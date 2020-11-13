@@ -101,5 +101,3 @@ class DecoderRNN(nn.Module):
         for beam in ordered[:beam_size]:
             output_sentences.append(beam[3])
         return output_sentences
-
-

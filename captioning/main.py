@@ -41,33 +41,6 @@ def get_device():
     return torch.cuda.is_available()
 
 
-def print_stats(train_loader, val_loader):
-    # print("Total number of tokens in vocabulary:", len(train_loader.dataset.vocab))
-    # print("Total number of data points in train set:", len(train_loader.dataset))
-    # print("Total number of data points in val set:", len(val_loader.dataset))
-
-    # print(dict(list(train_loader.dataset.vocab.word2idx.items())[:10]))
-    # counter = Counter(train_loader.dataset.caption_lengths)
-    # lengths = sorted(counter.items(), key=lambda pair: pair[1], reverse=True)
-    # for value, count in lengths:
-    #     print("value: %2d --- count: %5d" % (value, count))
-    # indices = train_loader.dataset.get_train_indices()
-    # # print("sampled indices:", indices)
-    # new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
-    # train_loader.batch_sampler.sampler = new_sampler
-    #
-    # # Obtain the batch.
-    # images, captions = next(iter(train_loader))
-    #
-    # images, captions = images.to(device), captions.to(device)
-    #
-    # print("images.shape:", images.shape)
-    # print("captions.shape:", captions.shape)
-    # display_image(images, captions, train_loader)
-    #
-    return
-
-
 def train_and_validate():
     # Step1: Load Data and Visulaize
     device = get_device()
@@ -77,9 +50,10 @@ def train_and_validate():
     vocab_size = len(vocab)
     # print_stats(train_loader, val_loader)
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
-    encoder, decoder = get_encoder_decoder(config.embed_size, config.hidden_size, vocab_size)
+    encoder, decoder = get_encoder_decoder(
+        config.embed_size, config.hidden_size, vocab_size
+    )
     criterion = nn.CrossEntropyLoss()
-
     if device:
         encoder = encoder.cuda()
         decoder = decoder.cuda()

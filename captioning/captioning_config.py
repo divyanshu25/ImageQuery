@@ -61,6 +61,8 @@ class Flickr_Config(BaseConfig):
         self.test_id_file = os.path.join(
             self.data_dir, "flickr/Flickr8k_text/Flickr_8k.testImages.txt"
         )
+        self.flickr_subset_size_train = 50
+        self.flickr_subset_size_val = 10
 
 
 class Config(Flickr_Config, COCO_Config):
@@ -82,7 +84,7 @@ class Config(Flickr_Config, COCO_Config):
         self.batch_size = 8 # batch size
         self.vocab_threshold = 5  # minimum word count threshold
         self.vocab_from_file = True  # if True, load existing vocab file
-        self.embed_size = 300  # dimensionality of image and word embeddings
+        self.embed_size = 512  # dimensionality of image and word embeddings
         self.hidden_size = 512  # number of features in hidden state of the RNN decoder
         self.epoch_range = range(1, 20)  # number of training epochs
         self.save_every = 1  # determines frequency of saving model weights

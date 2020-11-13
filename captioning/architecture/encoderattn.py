@@ -21,19 +21,24 @@ from captioning_config import Config
 
 config = Config()
 
+
 class EncoderAttn(nn.Module):
     def __init__(self, embed_dim):
         super(EncoderAttn, self).__init__()
         self.enc_image_size = config.encoderattn_encodedimgsize
 
-        resnet = torchvision.models.resnet101(pretrained=True)  # pretrained ImageNet ResNet-101
+        resnet = torchvision.models.resnet101(
+            pretrained=True
+        )  # pretrained ImageNet ResNet-101
 
         # Remove linear and pool layers (since we're not doing classification)
         modules = list(resnet.children())[:-2]
         self.resnet = nn.Sequential(*modules)
 
         # Resize image to fixed size to allow input images of variable size
-        self.adaptive_pool = nn.AdaptiveAvgPool2d((self.enc_image_size, self.enc_image_size))
+        self.adaptive_pool = nn.AdaptiveAvgPool2d(
+            (self.enc_image_size, self.enc_image_size)
+        )
 
         self.fine_tune(config.train_encoder)
 
@@ -44,8 +49,12 @@ class EncoderAttn(nn.Module):
         :return: encoded images
         """
         out = self.resnet(images)  # (batch_size, 2048, image_size/32, image_size/32)
-        out = self.adaptive_pool(out)  # (batch_size, 2048, encoded_image_size, encoded_image_size)
-        out = out.permute(0, 2, 3, 1)  # (batch_size, encoded_image_size, encoded_image_size, 2048)
+        out = self.adaptive_pool(
+            out
+        )  # (batch_size, 2048, encoded_image_size, encoded_image_size)
+        out = out.permute(
+            0, 2, 3, 1
+        )  # (batch_size, encoded_image_size, encoded_image_size, 2048)
         return out
 
     def fine_tune(self, fine_tune=True):
@@ -67,4 +76,3 @@ class EncoderAttn(nn.Module):
             for c in list(self.resnet.children())[5:]:
                 p = p + list(c.parameters())
         return params + p
-

@@ -97,6 +97,8 @@ def get_flickr_data_loader(config, flickr_ann_dict, mode="train"):
             ann_dict=flickr_ann_dict,
             transform=transform,
         )
+        indices = range(0, config.flickr_subset_size_train)
+        dataset = Subset(dataset, indices)
 
         data_loader = torch.utils.data.DataLoader(
             dataset,
@@ -129,6 +131,9 @@ def get_flickr_data_loader(config, flickr_ann_dict, mode="train"):
             ann_dict=flickr_ann_dict,
             transform=transform,
         )
+        indices = range(0, config.flickr_subset_size_val)
+        dataset = Subset(dataset, indices)
+
         data_loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=config.batch_size,
