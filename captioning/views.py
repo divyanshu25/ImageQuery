@@ -204,14 +204,15 @@ class SearchImage(Resource):
     @marshal_with(PopulateSearchSchema, code=200)
     def get(self, model_name, query):
         config = Config()
+
         if model_name not in ["coco", "flickr"]:
             return make_response(dict(status="Invalid model name"), 500)
         if model_name == "flickr":
             vocab = get_vocabulary(config, "flickr8k")
         else:
             vocab = get_vocabulary(config, "coco")
-
-        caption = self.get_encodings(vocab, query, config)
+        decoder = DecoderRNN(config.embed_size, config.hidden_size, len(vocab))
+        caption = self.get_encodings(vocab, query, config, decoder)
 
         data = (
             db.session.query(ImageCaptions)
@@ -223,7 +224,7 @@ class SearchImage(Resource):
             caption_index = d.caption_index
             if caption_index >= 5:
                 cosine_score = self.get_cosine_similarity(
-                    caption, self.get_encodings(vocab, d.caption, config)
+                    caption, self.get_encodings(vocab, d.caption, config, decoder)
                 )
                 if d.image_path not in cosine_scores:
                     cosine_scores[d.image_path] = 0
@@ -247,9 +248,9 @@ class SearchImage(Resource):
         return make_response(dict(image_ids=str(list_images)), 200)
 
     def get_cosine_similarity(self, a, b):
-        return cosine_similarity([a], [b])
+        return cosine_similarity(a.detach().numpy(), b.detach().numpy())
 
-    def get_encodings(self, vocab, query, config):
+    def get_encodings(self, vocab, query, config, decoder):
         tokens = nltk.tokenize.word_tokenize(query)
         caption = [vocab(vocab.start_word)]
         caption.extend([vocab(token) for token in tokens])
@@ -258,4 +259,7 @@ class SearchImage(Resource):
             caption.append(vocab(vocab.end_word))
         caption = caption[0 : config.max_length - 1]
         caption.append(vocab(vocab.end_word))
-        return caption
+        caption = torch.Tensor(caption).long().unsqueeze(0)
+        encodings = decoder.embedding_layer(caption).squeeze(0)
+        encodings = encodings.max(dim=1)
+        return encodings.indices.unsqueeze(0)
