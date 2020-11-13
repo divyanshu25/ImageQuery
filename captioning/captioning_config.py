@@ -20,7 +20,7 @@ from config import ROOT_DIR
 
 class BaseConfig:
     def __init__(self):
-        self.dataset_type = "coco"  # Supported types: 'flickr8k', 'coco'
+        self.dataset_type = "flickr8k"  # Supported types: 'flickr8k', 'coco'
         self.models_dir = os.path.join(ROOT_DIR, "captioning/models")
         self.data_dir = os.path.join(ROOT_DIR, "captioning/data/")
         self.enable_wandb = False
@@ -33,9 +33,15 @@ class COCO_Config(BaseConfig):
         self.test_root_dir_coco = os.path.join(self.data_dir, "coco/test2017")
         self.train_root_dir_coco = os.path.join(self.data_dir, "coco/train2017")
         self.val_root_dir_coco = os.path.join(self.data_dir, "coco/val2017")
-        self.train_ann_file_coco = os.path.join(self.data_dir, "coco/captions_train2017.json")        
-        self.val_ann_file_coco = os.path.join(self.data_dir, "coco/captions_val2017.json")        
-        self.test_ann_file_coco = os.path.join(self.data_dir, "coco/image_info_test2017.json")        
+        self.train_ann_file_coco = os.path.join(
+            self.data_dir, "coco/captions_train2017.json"
+        )
+        self.val_ann_file_coco = os.path.join(
+            self.data_dir, "coco/captions_val2017.json"
+        )
+        self.test_ann_file_coco = os.path.join(
+            self.data_dir, "coco/image_info_test2017.json"
+        )
         self.coco_subset_size = 30000
 
 
@@ -73,7 +79,7 @@ class Config(Flickr_Config, COCO_Config):
         self.vocab_file = os.path.join(
             self.data_dir, "vocab_{}.pkl".format(self.dataset_type)
         )
-        self.batch_size = 128  # batch size
+        self.batch_size = 8 # batch size
         self.vocab_threshold = 5  # minimum word count threshold
         self.vocab_from_file = True  # if True, load existing vocab file
         self.embed_size = 300  # dimensionality of image and word embeddings

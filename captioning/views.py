@@ -261,5 +261,5 @@ class SearchImage(Resource):
         caption.append(vocab(vocab.end_word))
         caption = torch.Tensor(caption).long().unsqueeze(0)
         encodings = decoder.embedding_layer(caption).squeeze(0)
-        encodings = encodings.max(dim=1)
+        # encodings = encodings.max(dim=1)
         return encodings.indices.unsqueeze(0)

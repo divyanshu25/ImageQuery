@@ -21,6 +21,7 @@ import pickle
 import os.path
 from collections import Counter
 
+
 class Vocabulary(object):
     def __init__(
         self,
@@ -30,6 +31,7 @@ class Vocabulary(object):
         start_word="<start>",
         end_word="<end>",
         unk_word="<unk>",
+        pad_word="<pad>",
         vocab_from_file=False,
     ):
         """Initialize the vocabulary.
@@ -48,6 +50,7 @@ class Vocabulary(object):
         self.start_word = start_word
         self.end_word = end_word
         self.unk_word = unk_word
+        self.pad_word = pad_word
         # self.annotations_file = annotations_file
         self.vocab_from_file = vocab_from_file
         if os.path.exists(self.vocab_file) and self.vocab_from_file:
@@ -71,6 +74,7 @@ class Vocabulary(object):
         self.add_word(self.start_word)
         self.add_word(self.end_word)
         self.add_word(self.unk_word)
+        self.add_word(self.pad_word)
         # self.add_captions()
 
     def init_vocab(self):

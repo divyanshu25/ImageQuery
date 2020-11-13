@@ -33,8 +33,9 @@ def validate(val_loader, encoder, decoder, criterion, device, vocab):
         encoder.eval()
         decoder.eval()
 
+        val_images, val_captions, _ = next(iter(val_loader))
         val_images, val_captions = convert_captions(
-            next(iter(val_loader)), vocab, config
+            val_images, val_captions, vocab, config
         )
         if device:
             val_images = val_images.cuda()

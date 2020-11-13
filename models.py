@@ -19,6 +19,7 @@ from image_query_app import db
 
 class ImageCaptions(db.Model):
     """Data model for Image captions."""
+
     __tablename__ = "ImageCaptions"
     image_path = db.Column(
         db.String(64), primary_key=True, index=True, unique=False, nullable=False

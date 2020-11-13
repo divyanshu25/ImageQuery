@@ -26,5 +26,7 @@ def get_predict(images, encoder, decoder, vocab, captions=None):
             sentence = clean_sentence(s, vocab)
             print("Predicted Caption {}: ".format(index) + str(sentence))
         if captions is not None:
-            print("Original Caption: " + clean_sentence(captions[i].cpu().numpy(), vocab))
+            print(
+                "Original Caption: " + clean_sentence(captions[i].cpu().numpy(), vocab)
+            )
         # imshow(image[0])
