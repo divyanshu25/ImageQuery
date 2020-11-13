@@ -73,7 +73,7 @@ class Config(Flickr_Config, COCO_Config):
         self.vocab_file = os.path.join(
             self.data_dir, "vocab_{}.pkl".format(self.dataset_type)
         )
-        self.batch_size = 8  # batch size
+        self.batch_size = 128  # batch size
         self.vocab_threshold = 5  # minimum word count threshold
         self.vocab_from_file = True  # if True, load existing vocab file
         self.embed_size = 300  # dimensionality of image and word embeddings
@@ -81,7 +81,7 @@ class Config(Flickr_Config, COCO_Config):
         self.epoch_range = range(1, 20)  # number of training epochs
         self.save_every = 1  # determines frequency of saving model weights
         self.print_every = 10  # determines window for printing average loss
-        self.num_workers = 2
+        self.num_workers = 0
         self.load_from_file = False
         self.run_training = False
         self.run_prediction = True
@@ -92,6 +92,6 @@ class Config(Flickr_Config, COCO_Config):
         self.log_file = (
             "training.log"
         )  # name of file with saved training loss and perplexity
-        self.beam_size = 3
+        self.beam_size = 5
         self.max_length = 40
         self.train_encoder = False
