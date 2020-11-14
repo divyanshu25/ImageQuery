@@ -5,3 +5,5 @@
 *.pyc
 *.npy
 *wandb*
+*.pth*
+*database*

@@ -50,6 +50,10 @@ def validate(val_loader, encoder, decoder, criterion, device, vocab):
         targets = caps_sorted[:, 1:]
         scores = pack_padded_sequence(outputs, decode_lengths, batch_first=True)
         targets = pack_padded_sequence(targets, decode_lengths, batch_first=True)
+        if device:
+            scores = scores.cuda()
+            targets = targets.cuda()
+
         val_loss = criterion(scores.data, targets.data)
         val_loss += 1 * ((1. - alphas.sum(dim=1)) ** 2).mean()
         encoder.train()
@@ -110,11 +114,13 @@ def train(
             # return
             #Checkpoint[4]
             # Calculate the batch loss
-
+            if device:
+                scores = scores.cuda()
+                targets = targets.cuda()
             loss = criterion(scores.data, targets.data)
             loss += 1 * ((1. - alphas.sum(dim=1)) ** 2).mean()
 
-            if config.verbose and i_step == total_step and epoch%10 == 0:
+            if config.verbose and i_step == total_step:
                 for batch in range(min(config.batch_size, 10)):
                     curr_pred_vec = outputs[batch, :, :]
                     predicted_caption = torch.max(curr_pred_vec, dim=1)

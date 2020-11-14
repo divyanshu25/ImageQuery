@@ -94,8 +94,9 @@ def predict():
 
     device = get_device()
 
-    encoder = EncoderCNN(config.embed_size)
-    decoder = DecoderRNN(config.embed_size, config.hidden_size, vocab_size)
+    encoder, decoder = get_encoder_decoder(
+        config.embed_size, config.hidden_size, vocab_size
+    )
     if device:
         encoder = encoder.cuda()
         decoder = decoder.cuda()
