@@ -61,6 +61,7 @@ class Flickr_Config(BaseConfig):
         self.test_id_file = os.path.join(
             self.data_dir, "flickr/Flickr8k_text/Flickr_8k.testImages.txt"
         )
+        self.flickr_subsample = False
         self.flickr_subset_size_train = 50
         self.flickr_subset_size_val = 10
 
