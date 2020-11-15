@@ -19,7 +19,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 from captioning_config import Config as Config
-from .modules import *
+from .attention import *
 
 config = Config()
 
@@ -159,3 +159,71 @@ class DecoderAttn(nn.Module):
             alphas[:batch_size_t, t, :] = alpha
 
         return predictions, encoded_captions, decode_lengths, alphas, sort_ind
+
+    def sample(self, inputs, states=None, max_len=20):
+        """ accepts pre-processed image tensor (inputs) and
+        returns predicted sentence (list of tensor ids of length max_len) """
+        # input 1,300
+        batch_size = inputs.size(0)  # 1
+        encoder_dim = inputs.size(-1)  # 2048
+
+        # Flatten image
+        encoder_out = inputs.view(
+            batch_size, -1, encoder_dim
+        )  # (batch_size, num_pixels, encoder_dim)
+
+        h, c = self.init_hidden_state(encoder_out)  # (batch_size, decoder_dim)
+
+        beam_size = config.beam_size
+        sequences = [
+            [1.0, torch.LongTensor([[0]]), [], (h, c)]
+        ]  # [Value, curr_word, output_sentence, states]
+        finished_beams = []
+        best_so_far = 0.0
+
+        for i in range(max_len):
+            expanded_beams = []
+            for index, s in enumerate(sequences):
+                current_h, current_s = s[3]
+                embeddings = self.embedding(s[1]).squeeze(1)
+                att, _ = self.attention(
+                    encoder_out, current_h
+                )  # (s, encoder_dim), (s, num_pixels)
+                gate = self.sigmoid(
+                    self.f_beta(current_h)
+                )  # gating scalar, (s, encoder_dim)
+                att = gate * att
+                current_h, current_s = self.decode_step(
+                    torch.cat([embeddings, att], dim=1), (current_h, current_s)
+                )  # (s, decoder_dim)
+                scores = self.fc(current_h)
+                out = F.softmax(scores, dim=1)
+                topk_picks = torch.topk(out, beam_size, dim=1)  #
+                topk_picks_values = topk_picks[0].squeeze()
+                topk_picks_indices = topk_picks[1].squeeze()
+                for ix, val in zip(topk_picks_indices, topk_picks_values):
+                    current_beam = []
+                    current_beam.extend(
+                        [
+                            s[0] * val.item(),
+                            torch.LongTensor([ix]),
+                            s[2] + [ix.item()],
+                            (current_h, current_s),
+                        ]
+                    )
+                    if ix.item() == 1:
+                        finished_beams.append(current_beam)
+                        if best_so_far < current_beam[0]:
+                            best_so_far = current_beam[0]
+                    else:
+                        expanded_beams.append(current_beam)
+
+            ordered = sorted(expanded_beams, key=lambda tup: tup[0])[::-1]
+            sequences = ordered[:beam_size]
+
+        sequences.extend(finished_beams)
+        ordered = sorted(sequences, key=lambda tup: tup[0])[::-1]
+        output_sentences = []
+        for beam in ordered[:beam_size]:
+            output_sentences.append(beam[2])
+        return output_sentences

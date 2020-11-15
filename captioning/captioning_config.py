@@ -71,18 +71,18 @@ class Config(Flickr_Config, COCO_Config):
 
     def __init__(self):
         super(Config, self).__init__()
-        self.encoder_prefix = "encoder"
-        self.decoder_prefix = "decoder"
+        self.encoder_prefix = "encoder_flickr_attn"
+        self.decoder_prefix = "decoder_flickr_attn"
         self.encoder_file = os.path.join(
-            self.models_dir, "{}-16.pth".format(self.encoder_prefix)
+            self.models_dir, "{}-12.pth".format(self.encoder_prefix)
         )
         self.decoder_file = os.path.join(
-            self.models_dir, "{}-16.pth".format(self.decoder_prefix)
+            self.models_dir, "{}-12.pth".format(self.decoder_prefix)
         )
         self.vocab_file = os.path.join(
             self.data_dir, "vocab_{}.pkl".format(self.dataset_type)
         )
-        self.batch_size = 8 # batch size
+        self.batch_size = 4  # batch size
         self.vocab_threshold = 5  # minimum word count threshold
         self.vocab_from_file = True  # if True, load existing vocab file
         self.embed_size = 512  # dimensionality of image and word embeddings
