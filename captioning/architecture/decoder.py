@@ -58,6 +58,7 @@ class DecoderRNN(nn.Module):
         """ accepts pre-processed image tensor (inputs) and
         returns predicted sentence (list of tensor ids of length max_len) """
         # input 1,300
+        inputs = inputs.unsqueeze(1)
         beam_size = config.beam_size
         sequences = [
             [1.0, inputs, states, []]

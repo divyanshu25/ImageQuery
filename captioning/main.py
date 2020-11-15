@@ -104,6 +104,7 @@ def predict():
     encoder.eval()
     decoder.eval()
     if not torch.cuda.is_available():
+        print(config.encoder_file, config.decoder_file)
         encoder.load_state_dict(
             torch.load(config.encoder_file, map_location=torch.device("cpu"))
         )
@@ -115,7 +116,9 @@ def predict():
         decoder.load_state_dict(torch.load(config.decoder_file))
 
     images, captions, _ = next(iter(test_loader))
-    images, captions = convert_captions(images, captions, vocab, config)
+    images, captions, captions_length = convert_captions(
+        images, captions, vocab, config
+    )
     if device:
         images = images.cuda()
     get_predict(images, encoder, decoder, vocab, captions)

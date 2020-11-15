@@ -20,7 +20,7 @@ from captioning.utils import imshow, clean_sentence
 def get_predict(images, encoder, decoder, vocab, captions=None):
     for i in range(images.shape[0]):
         image = images[i].unsqueeze(0)
-        features = encoder(image).unsqueeze(1)
+        features = encoder(image)
         output = decoder.sample(features)
         for index, s in enumerate(output):
             sentence = clean_sentence(s, vocab)
@@ -29,4 +29,4 @@ def get_predict(images, encoder, decoder, vocab, captions=None):
             print(
                 "Original Caption: " + clean_sentence(captions[i].cpu().numpy(), vocab)
             )
-        # imshow(image[0])
+        imshow(image[0])
