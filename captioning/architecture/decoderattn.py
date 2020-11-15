@@ -176,7 +176,7 @@ class DecoderAttn(nn.Module):
 
         beam_size = config.beam_size
         sequences = [
-            [1.0, torch.LongTensor([[0]]), [0], (h, c)]
+            [0.0, torch.LongTensor([[0]]), [0], (h, c)]
         ]  # [Value, curr_word, output_sentence, states]
         finished_beams = []
         best_so_far = 0.0
@@ -197,7 +197,7 @@ class DecoderAttn(nn.Module):
                     torch.cat([embeddings, att], dim=1), (current_h, current_s)
                 )  # (s, decoder_dim)
                 scores = self.fc(current_h)
-                out = F.softmax(scores, dim=1)
+                out = F.log_softmax(scores, dim=1)
                 topk_picks = torch.topk(out, beam_size, dim=1)  #
                 topk_picks_values = topk_picks[0].squeeze()
                 topk_picks_indices = topk_picks[1].squeeze()
@@ -205,7 +205,7 @@ class DecoderAttn(nn.Module):
                     current_beam = []
                     current_beam.extend(
                         [
-                            s[0] * val.item(),
+                            s[0] + val.item(),
                             torch.LongTensor([ix]),
                             s[2] + [ix.item()],
                             (current_h, current_s),
