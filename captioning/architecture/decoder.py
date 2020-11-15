@@ -61,7 +61,7 @@ class DecoderRNN(nn.Module):
         inputs = inputs.unsqueeze(1)
         beam_size = config.beam_size
         sequences = [
-            [1.0, inputs, states, []]
+            [0.0, inputs, states, []]
         ]  # [Value, inputs, states, output_sentence]
         finished_beams = []
         best_so_far = 0.0
@@ -71,7 +71,7 @@ class DecoderRNN(nn.Module):
                 lstm_outputs, states = self.lstm(s[1], s[2])
                 lstm_outputs = lstm_outputs.squeeze(1)  # 1,512
                 out = self.linear(lstm_outputs)  # 1,3004
-                out = self.softmax(out)
+                out = self.log_softmax(out)
                 topk_picks = torch.topk(out, beam_size, dim=1)
                 topk_picks_values = topk_picks[0].squeeze()
                 topk_picks_indices = topk_picks[1].squeeze()
@@ -79,7 +79,7 @@ class DecoderRNN(nn.Module):
                     current_beam = []
                     current_beam.extend(
                         [
-                            s[0] * val.item(),
+                            s[0] + val.item(),
                             self.embedding_layer(ix).unsqueeze(0).unsqueeze(0),
                             states,
                             s[3] + [ix.item()],
