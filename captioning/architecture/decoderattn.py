@@ -176,7 +176,7 @@ class DecoderAttn(nn.Module):
 
         beam_size = config.beam_size
         sequences = [
-            [1.0, torch.LongTensor([[0]]), [], (h, c)]
+            [1.0, torch.LongTensor([[0]]), [0], (h, c)]
         ]  # [Value, curr_word, output_sentence, states]
         finished_beams = []
         best_so_far = 0.0
