@@ -21,6 +21,7 @@ import torch.nn.functional as F
 
 config = Config()
 
+
 def beam_search(encoder, decoder, image):
     beam_size = config.beam_size
     max_len = config.max_length

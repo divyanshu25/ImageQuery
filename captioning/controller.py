@@ -15,15 +15,15 @@
 #   ==================================================================
 from flask import Blueprint, request, make_response
 from flask_restful import Api
-from captioning.views import PopulateFlickrData, ComputeBleu, SearchImage
+from captioning.views import PopulateData, ComputeBleu, SearchImage
 
 captioning_bp = Blueprint("captioning", __name__, url_prefix="/")
 api = Api(captioning_bp)
 api.add_resource(
-    PopulateFlickrData, "populate/flickr/<string:set>", endpoint="populate"
+    PopulateData, "populate/<string:model_name>/<string:set>", endpoint="populate"
 )
 api.add_resource(
-    ComputeBleu, "compute/bleu/<string:model_name>/<string:set>", endpoint="bleu"
+    ComputeBleu, "compute/bleu/<string:model_name>/<string:set>/<int:bleu_index>", endpoint="bleu"
 )
 api.add_resource(
     SearchImage, "search/<string:model_name>/<string:query>", endpoint="search"
@@ -31,6 +31,6 @@ api.add_resource(
 
 
 def register_captioning_in_docs(docs):
-    docs.register(PopulateFlickrData, endpoint="captioning.populate")
+    docs.register(PopulateData, endpoint="captioning.populate")
     docs.register(ComputeBleu, endpoint="captioning.bleu")
     docs.register(SearchImage, endpoint="captioning.search")

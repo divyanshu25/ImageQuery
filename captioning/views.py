@@ -20,12 +20,12 @@ from flask import make_response, request
 from flask_apispec import marshal_with, doc, use_kwargs
 from flask_apispec import MethodResource as Resource
 
-from captioning.architecture.decoder import DecoderRNN
-from captioning.architecture.encoder import EncoderCNN
+from captioning.architecture.archpicker import get_encoder_decoder
 from captioning.schema import PopulateImageSchema, BleuScoreSchema, PopulateSearchSchema
 from captioning.captioning_config import Config
 from captioning.data_handler.data_loader import get_data_loader, get_vocabulary
 from captioning.main import get_device
+from captioning.inference import beam_search
 from models import ImageCaptions, db
 import os
 import torch
@@ -40,11 +40,11 @@ from sklearn.metrics.pairwise import cosine_similarity
     description="API end point to load image data from disk to the Database.",
     tags=["Captioning"],
 )
-class PopulateFlickrData(Resource):
+class PopulateData(Resource):
     @marshal_with(PopulateImageSchema, code=200)
-    def get(self, set):
-        if set not in ["test", "val", "train"]:
-            return make_response(dict(status="Invalid Set"), 500)
+    def get(self, model_name, set):
+        if model_name not in ["coco", "flickr", "flickr_attn"] or set not in ["test", "train", "val"]:
+            return make_response(dict(status="Invalid set or model name"), 500)
         config = Config()
         data_loader = get_data_loader(config, mode=set, type=config.dataset_type)
         vocab = get_vocabulary(config, type=config.dataset_type)
@@ -52,8 +52,9 @@ class PopulateFlickrData(Resource):
 
         device = get_device()
 
-        encoder = EncoderCNN(config.embed_size)
-        decoder = DecoderRNN(config.embed_size, config.hidden_size, vocab_size)
+        encoder, decoder = get_encoder_decoder(
+            config.embed_size, config.hidden_size, vocab_size
+        )
         if device:
             encoder = encoder.cuda()
             decoder = decoder.cuda()
@@ -79,18 +80,17 @@ class PopulateFlickrData(Resource):
             for i in range(total_step):
                 print("step: {}".format(i))
                 images, captions, image_ids = next(iter(data_loader))
-                images, captions = convert_captions(images, captions, vocab, config)
+                images, captions, caption_lengths = convert_captions(images, captions, vocab, config)
                 if device:
                     images = images.cuda()
 
                 for k in range(images.shape[0]):
                     image = images[k].unsqueeze(0)
-                    features = encoder(image).unsqueeze(1)
-                    output = decoder.sample(features)
+                    output = beam_search(encoder, decoder, image)
                     image_id = image_ids[k].split("#")[0]
                     if not db.session.query(
                         db.session.query(ImageCaptions)
-                        .filter_by(image_path=image_id)
+                        .filter_by(image_path=image_id, set="{}_{}".format(model_name, set))
                         .exists()
                     ).scalar():
                         for index, beam in enumerate(output):
@@ -99,9 +99,8 @@ class PopulateFlickrData(Resource):
                             captions_obj = ImageCaptions(
                                 image_path=image_id,
                                 caption_index=caption_index,
-                                set="flickr_{}".format(set),
+                                set="{}_{}".format(model_name, set),
                                 caption=sentence,
-                                # encoded_caption=str(beam),
                             )
                             print(
                                 "Inserting Prediction {}, {}".format(
@@ -119,18 +118,14 @@ class PopulateFlickrData(Resource):
 
                         if not db.session.query(
                             db.session.query(ImageCaptions)
-                            .filter_by(image_path=image_id, caption_index=caption_index)
+                            .filter_by(image_path=image_id, caption_index=caption_index, set="{}_{}".format(model_name, set))
                             .exists()
                         ).scalar():
-                            encoded_caption = captions[k].cpu().numpy()
-                            endindex = np.where(encoded_caption == 1)[0][0]
-                            # encoded_caption = encoded_caption[: endindex + 1]
                             captions_obj = ImageCaptions(
                                 image_path=image_id,
                                 caption_index=caption_index,
-                                set="flickr_{}".format(set),
+                                set="{}_{}".format(model_name, set),
                                 caption=sentence,
-                                # encoded_caption=str(encoded_caption.tolist()),
                             )
                             print(
                                 "Inserting Prediction {}, {}".format(
@@ -154,8 +149,8 @@ class PopulateFlickrData(Resource):
 )
 class ComputeBleu(Resource):
     @marshal_with(BleuScoreSchema, code=200)
-    def get(self, model_name, set):
-        if model_name not in ["coco", "flickr"] or set not in ["test", "train", "val"]:
+    def get(self, model_name, set, bleu_index):
+        if model_name not in ["coco", "flickr", "flickr_attn"] or set not in ["test", "train", "val"]:
             return make_response(dict(status="Invalid set or model name"), 500)
         data = (
             db.session.query(ImageCaptions)
@@ -188,10 +183,16 @@ class ComputeBleu(Resource):
                 reference_corpus.append(original_captions[k])
         # print(candidate_corpus)
         # print(reference_corpus)
+        score = 0.0
+        if bleu_index == 2:
+            score = bleu_score(
+                candidate_corpus, reference_corpus, max_n=2, weights=[0.5, 0.5]
+            )
+        elif bleu_index == 4:
+            score = bleu_score(
+                candidate_corpus, reference_corpus, max_n=4, weights=[0.25, 0.25, 0.25, 0.25]
+            )
 
-        score = bleu_score(
-            candidate_corpus, reference_corpus, max_n=2, weights=[0.25, 0.25]
-        )
         return make_response(dict(bleu_Score=score), 200)
 
 
@@ -205,7 +206,7 @@ class SearchImage(Resource):
     def get(self, model_name, query):
         config = Config()
 
-        if model_name not in ["coco", "flickr"]:
+        if model_name not in ["coco", "flickr", "flickr_attn"]:
             return make_response(dict(status="Invalid model name"), 500)
         if model_name == "flickr":
             vocab = get_vocabulary(config, "flickr8k")

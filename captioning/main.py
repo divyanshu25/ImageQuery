@@ -14,9 +14,7 @@
 #   limitations under the License.
 #   ==================================================================
 from collections import Counter
-from architecture.encoder import EncoderCNN
-from architecture.decoder import DecoderRNN
-from architecture.archpicker import get_encoder_decoder
+from captioning.architecture.archpicker import get_encoder_decoder
 from captioning.captioning_config import Config as CaptioningConfig
 from captioning.data_handler.data_loader import get_data_loader, get_vocabulary
 from captioning.utils import convert_captions
