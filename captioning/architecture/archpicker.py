@@ -27,7 +27,7 @@ config = Config()
 
 
 def get_encoder_decoder(embed_size, hidden_size, vocab_size):
-    if config.arch_name == "vannila":
+    if config.arch_name == "vanilla":
         return (EncoderCNN(embed_size), DecoderRNN(embed_size, hidden_size, vocab_size))
     elif config.arch_name == "attention":
         return (
