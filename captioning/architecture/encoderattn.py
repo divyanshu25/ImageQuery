@@ -17,7 +17,7 @@
 import torch
 from torch import nn
 import torchvision
-from captioning_config import Config
+from captioning.captioning_config import Config
 from torch.nn import AdaptiveAvgPool2d as AAP
 from torchvision.models import resnet101#, resnet50
 

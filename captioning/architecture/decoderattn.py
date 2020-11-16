@@ -18,7 +18,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-from captioning_config import Config as Config
+from captioning.captioning_config import Config as Config
 from .attention import *
 
 config = Config()
