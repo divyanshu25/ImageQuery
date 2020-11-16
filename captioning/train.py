@@ -144,18 +144,18 @@ def train(
             # Update the parameters in the optimizer
             optimizer.step()
             # - - - Validate - - -
-            val_loss = validate(val_loader, encoder, decoder, criterion, device, vocab)
-            # Get training statistics.
-            stats = "Epoch [%d/%d], Step [%d/%d], Train Loss: %.4f, Val Loss: %.4f" % (
-                epoch,
-                config.epoch_range[-1],
-                i_step,
-                total_step,
-                loss.item(),
-                val_loss.item(),
-            )
 
             if i_step % config.print_every == 0:
+                val_loss = validate(val_loader, encoder, decoder, criterion, device, vocab)
+                # Get training statistics.
+                stats = "Epoch [%d/%d], Step [%d/%d], Train Loss: %.4f, Val Loss: %.4f" % (
+                    epoch,
+                    config.epoch_range[-1],
+                    i_step,
+                    total_step,
+                    loss.item(),
+                    val_loss.item(),
+                )
                 print(stats)
                 if config.enable_wandb:
                     wandb.log({"train_loss": loss.item(), "val_loss": val_loss.item()})
