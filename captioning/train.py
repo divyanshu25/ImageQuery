@@ -50,18 +50,23 @@ def validate(val_loader, encoder, decoder, criterion, device, vocab):
 
         # Pass the inputs through the CNN-RNN model.
         features = encoder(val_images)
-        outputs, caps_sorted, decode_lengths, alphas = decoder(
-            features, val_captions, caption_lengths
-        )
-        targets = caps_sorted[:, 1:]
-        scores = pack_padded_sequence(outputs, decode_lengths, batch_first=True)
-        targets = pack_padded_sequence(targets, decode_lengths, batch_first=True)
-        if device:
-            scores = scores.cuda()
-            targets = targets.cuda()
+        val_loss = 0.0
+        if config.arch_name == "attention":
+            outputs, caps_sorted, decode_lengths, alphas = decoder(
+                features, val_captions, caption_lengths
+            )
+            targets = caps_sorted[:, 1:]
+            scores = pack_padded_sequence(outputs, decode_lengths, batch_first=True)
+            targets = pack_padded_sequence(targets, decode_lengths, batch_first=True)
+            if device:
+                scores = scores.cuda()
+                targets = targets.cuda()
 
-        val_loss = criterion(scores.data, targets.data)
-        val_loss += 1 * ((1.0 - alphas.sum(dim=1)) ** 2).mean()
+            val_loss = criterion(scores.data, targets.data)
+            val_loss += 1 * ((1.0 - alphas.sum(dim=1)) ** 2).mean()
+        else:
+            outputs = decoder(features, val_captions)
+            val_loss = criterion(outputs.view(-1, vocab_size), val_captions.view(-1))
         encoder.train()
         decoder.train()
         return val_loss
@@ -104,26 +109,34 @@ def train(
             features = encoder(images)
             # print(features.shape)
             # Checkpoint[2]
-            outputs, caps_sorted, decode_lengths, alphas = decoder(
-                features, captions, caption_lengths
-            )
-            # print(f"Output:{outputs.size()}, cap_sorted:{caps_sorted}, decode_len:{decode_lengths},"
-            #       f"alphas: {alphas.size()}, sortind:{sort_ind}")
-            # Checkpoint[3]
-            targets = caps_sorted[:, 1:]
-            # print(f"scores:{outputs}, targets:{targets}")
-            scores = pack_padded_sequence(outputs, decode_lengths, batch_first=True)
-            targets = pack_padded_sequence(targets, decode_lengths, batch_first=True)
-            # print(f"scores:{scores.data},\n "
-            #       f"targets:{targets.data}")
-            # return
-            # Checkpoint[4]
-            # Calculate the batch loss
-            if device:
-                scores = scores.cuda()
-                targets = targets.cuda()
-            loss = criterion(scores.data, targets.data)
-            loss += 1 * ((1.0 - alphas.sum(dim=1)) ** 2).mean()
+            if config.arch_name == "attention":
+                outputs, caps_sorted, decode_lengths, alphas = decoder(
+                    features, captions, caption_lengths
+                )
+                # print(f"Output:{outputs.size()}, cap_sorted:{caps_sorted}, decode_len:{decode_lengths},"
+                #       f"alphas: {alphas.size()}, sortind:{sort_ind}")
+                # Checkpoint[3]
+                targets = caps_sorted[:, 1:]
+                # print(f"scores:{outputs}, targets:{targets}")
+                scores = pack_padded_sequence(outputs, decode_lengths, batch_first=True)
+                targets = pack_padded_sequence(targets, decode_lengths, batch_first=True)
+                # print(f"scores:{scores.data},\n "
+                #       f"targets:{targets.data}")
+                # return
+                # Checkpoint[4]
+                # Calculate the batch loss
+                if device:
+                    scores = scores.cuda()
+                    targets = targets.cuda()
+                loss = criterion(scores.data, targets.data)
+                loss += 1 * ((1.0 - alphas.sum(dim=1)) ** 2).mean()
+            else:
+                outputs = decoder(features, captions)
+                loss = criterion(
+                    # outputs.view(-1, vocab_size), captions_target.contiguous().view(-1)
+                    outputs.view(-1, vocab_size),
+                    captions.contiguous().view(-1),
+                )
 
             if config.verbose and i_step == total_step:
                 for batch in range(min(config.batch_size, 10)):
