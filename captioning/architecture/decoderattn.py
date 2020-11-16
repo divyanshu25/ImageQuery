@@ -82,12 +82,12 @@ class DecoderAttn(nn.Module):
         h = self.h0(eo);
         c = self.c0(eo);
 
-        decode_lengths = (caption_lengths - 1).tolist()
-        mcl = max(decode_lengths)
+        decode_lengths = (caption_lengths - 1)
+        mcl = torch.max(decode_lengths).item()
         predictions, alphas = self.initialize_prediction(features.shape, mcl, self.vocab_size)
 
         for t in range(mcl):
-            mask = sum([l > t for l in decode_lengths])
+            mask = (decode_lengths > t).sum()
             attn_weighted, alpha = self.attn(
                 features[:mask], h[:mask]
             )
@@ -103,7 +103,7 @@ class DecoderAttn(nn.Module):
             predictions[:mask, t, :] = preds
             alphas[:mask, t, :] = alpha
 
-        return predictions, captions, decode_lengths, alphas
+        return predictions, captions, decode_lengths.tolist(), alphas
 
     def init_search(self, inputs, states=None, max_len=20):
         batch_size = inputs.size(0)
@@ -112,9 +112,8 @@ class DecoderAttn(nn.Module):
         encoder_out = inputs.view(batch_size, -1, encoder_size)
 
         eo = encoder_out.mean(dim=1)
-        h = self.h0(eo);
-        c = self.c0(eo);
-
+        h = self.h0(eo)
+        c = self.c0(eo)
         return (encoder_out, (h, c))
 
     def predict_next(self, encoder_out, current_word, state):
