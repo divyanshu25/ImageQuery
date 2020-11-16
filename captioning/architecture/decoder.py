@@ -54,51 +54,24 @@ class DecoderRNN(nn.Module):
         # print(out.shape)
         return out
 
-    def sample(self, inputs, states=None, max_len=20):
+    def init_search(self, inputs, states=None, max_len=20):
         """ accepts pre-processed image tensor (inputs) and
         returns predicted sentence (list of tensor ids of length max_len) """
         # input 1,300
+        states = (None, 0)
         inputs = inputs.unsqueeze(1)
-        beam_size = config.beam_size
-        sequences = [
-            [0.0, inputs, states, []]
-        ]  # [Value, inputs, states, output_sentence]
-        finished_beams = []
-        best_so_far = 0.0
-        for i in range(max_len):
-            expanded_beams = []
-            for s in sequences:
-                lstm_outputs, states = self.lstm(s[1], s[2])
-                lstm_outputs = lstm_outputs.squeeze(1)  # 1,512
-                out = self.linear(lstm_outputs)  # 1,3004
-                out = self.log_softmax(out)
-                topk_picks = torch.topk(out, beam_size, dim=1)
-                topk_picks_values = topk_picks[0].squeeze()
-                topk_picks_indices = topk_picks[1].squeeze()
-                for ix, val in zip(topk_picks_indices, topk_picks_values):
-                    current_beam = []
-                    current_beam.extend(
-                        [
-                            s[0] + val.item(),
-                            self.embedding_layer(ix).unsqueeze(0).unsqueeze(0),
-                            states,
-                            s[3] + [ix.item()],
-                        ]
-                    )
-                    if ix.item() == 1:
-                        finished_beams.append(current_beam)
-                        if best_so_far < current_beam[0]:
-                            best_so_far = current_beam[0]
-                    else:
-                        expanded_beams.append(current_beam)
+        return (inputs, states)
 
-            ordered = sorted(expanded_beams, key=lambda tup: tup[0])[::-1]
-            # if ordered[0][0] < best_so_far:
-            #     break
-            sequences = ordered[:beam_size]
-        sequences.extend(finished_beams)
-        ordered = sorted(sequences, key=lambda tup: tup[0])[::-1]
-        output_sentences = []
-        for beam in ordered[:beam_size]:
-            output_sentences.append(beam[3])
-        return output_sentences
+    def predict_next(self, encoder_out, current_word, state):
+        lstm_states, iteration = state
+        if iteration == 0:
+            lstm_outputs, lstm_states = self.lstm(encoder_out, lstm_states)
+        else:
+            current_word = self.embedding_layer(current_word).unsqueeze(0)
+
+            lstm_outputs, lstm_states = self.lstm(current_word, lstm_states)
+
+        lstm_outputs = lstm_outputs.squeeze(1)  # 1,512
+        out = self.linear(lstm_outputs)  # 1,3004
+
+        return out, (lstm_states, iteration + 1)
