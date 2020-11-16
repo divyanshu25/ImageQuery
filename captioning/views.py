@@ -212,7 +212,11 @@ class SearchImage(Resource):
             vocab = get_vocabulary(config, "flickr8k")
         else:
             vocab = get_vocabulary(config, "coco")
-        decoder = DecoderRNN(config.embed_size, config.hidden_size, len(vocab))
+        vocab_size = len(vocab)
+
+        encoder, decoder = get_encoder_decoder(
+            config.embed_size, config.hidden_size, vocab_size
+        )
         caption = self.get_encodings(vocab, query, config, decoder)
 
         data = (
