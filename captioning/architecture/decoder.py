@@ -27,7 +27,7 @@ config = Config()
 class DecoderRNN(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, num_layers=1):
         super().__init__()
-        self.embedding_layer = nn.Embedding(vocab_size, embed_size)
+        self.embedding = nn.Embedding(vocab_size, embed_size)
 
         self.project_feature_layer = nn.Linear(embed_size, hidden_size)
 
@@ -44,7 +44,7 @@ class DecoderRNN(nn.Module):
     def forward(self, features, captions, caption_lengths):
         captions = captions[:, :-1]
         # print(captions.shape)
-        embed = self.embedding_layer(captions)
+        embed = self.embedding(captions)
         # print(embed.shape)
         embed = torch.cat((features.unsqueeze(1), embed), dim=1)
         # print(embed.shape)
@@ -67,7 +67,7 @@ class DecoderRNN(nn.Module):
         if iteration == 0:
             lstm_outputs, lstm_states = self.lstm(encoder_out, lstm_states)
         else:
-            current_word = self.embedding_layer(current_word).unsqueeze(0)
+            current_word = self.embedding(current_word).unsqueeze(0)
 
             lstm_outputs, lstm_states = self.lstm(current_word, lstm_states)
 
