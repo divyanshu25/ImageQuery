@@ -92,8 +92,8 @@ class Config(Flickr_Config, COCO_Config):
         self.print_every = 10  # determines window for printing average loss
         self.num_workers = 0
         self.load_from_file = False
-        self.run_training = False
-        self.run_prediction = True
+        self.run_training = True
+        self.run_prediction = False
         self.learning_rate = 0.001
         self.scheduler_gamma = 0.95
         self.momentum = 0.9
@@ -105,7 +105,7 @@ class Config(Flickr_Config, COCO_Config):
         self.max_length = 40
         self.train_encoder = False
         self.arch_name = "attention"
-        self.decoderkwtl_attdim = 512
-        self.decoderkwtl_encodeddim = 2048
-        self.decoderattn_attdim = 512
-        self.encoderattn_encodedimgsize = 14
+        self.features_img_size = 2048
+        self.attn_size = 512
+        self.encoded_img_size = 14
+        self.dropout = 0.5

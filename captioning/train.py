@@ -50,7 +50,7 @@ def validate(val_loader, encoder, decoder, criterion, device, vocab):
 
         # Pass the inputs through the CNN-RNN model.
         features = encoder(val_images)
-        outputs, caps_sorted, decode_lengths, alphas, sort_ind = decoder(
+        outputs, caps_sorted, decode_lengths, alphas = decoder(
             features, val_captions, caption_lengths
         )
         targets = caps_sorted[:, 1:]
@@ -93,11 +93,8 @@ def train(
             decoder.zero_grad()
             encoder.zero_grad()
             # Obtain the batch.
-            images, captions, caption_lengths = convert_captions(
-                next(iter(train_loader)), vocab, config
-            )
-            # print("Images: {}, captions:{}, caption_lengths:{}".format(images.size(), captions, caption_lengths))
-            # Checkpoint[1]
+            images, captions, _ = next(iter(train_loader))
+            images, captions, caption_lengths = convert_captions(images, captions, vocab, config)
             if device:
                 images = images.cuda()
                 captions = captions.cuda()
@@ -107,7 +104,7 @@ def train(
             features = encoder(images)
             # print(features.shape)
             # Checkpoint[2]
-            outputs, caps_sorted, decode_lengths, alphas, sort_ind = decoder(
+            outputs, caps_sorted, decode_lengths, alphas = decoder(
                 features, captions, caption_lengths
             )
             # print(f"Output:{outputs.size()}, cap_sorted:{caps_sorted}, decode_len:{decode_lengths},"
