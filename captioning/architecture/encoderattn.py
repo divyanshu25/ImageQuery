@@ -18,59 +18,42 @@ import torch
 from torch import nn
 import torchvision
 from captioning_config import Config
+from torch.nn import AdaptiveAvgPool2d as AAP
+from torchvision.models import resnet101#, resnet50
 
 config = Config()
-
 
 class EncoderAttn(nn.Module):
     def __init__(self, embed_dim):
         super(EncoderAttn, self).__init__()
-        self.enc_image_size = config.encoderattn_encodedimgsize
+        self.enc_image_size = config.encoded_img_size
 
-        resnet = torchvision.models.resnet101(
-            pretrained=True
-        )  # pretrained ImageNet ResNet-101
-
-        # Remove linear and pool layers (since we're not doing classification)
-        modules = list(resnet.children())[:-2]
-        self.resnet = nn.Sequential(*modules)
-
-        # Resize image to fixed size to allow input images of variable size
-        self.adaptive_pool = nn.AdaptiveAvgPool2d(
+        self.pool = AAP(
             (self.enc_image_size, self.enc_image_size)
         )
 
-        self.fine_tune(config.train_encoder)
+        # resnet = resnet50(
+        #     pretrained=True
+        # )
+        resnet = resnet101(
+            pretrained=True
+        )
+        self.resnet = nn.Sequential(*(list(resnet.children())[:-2]))
+        self.train_parameters(config.train_encoder)
 
     def forward(self, images):
-        """
-        Forward propagation.
-        :param images: images, a tensor of dimensions (batch_size, 3, image_size, image_size)
-        :return: encoded images
-        """
-        out = self.resnet(images)  # (batch_size, 2048, image_size/32, image_size/32)
-        out = self.adaptive_pool(
-            out
-        )  # (batch_size, 2048, encoded_image_size, encoded_image_size)
-        out = out.permute(
-            0, 2, 3, 1
-        )  # (batch_size, encoded_image_size, encoded_image_size, 2048)
+        out = self.pool(self.resnet(images)).permute(0, 2, 3, 1)
         return out
 
-    def fine_tune(self, fine_tune=True):
-        """
-        Allow or prevent the computation of gradients for convolutional blocks 2 through 4 of the encoder.
-        :param fine_tune: Allow?
-        """
+    def train_parameters(self, is_trainable=True):
         for p in self.resnet.parameters():
             p.requires_grad = False
-        # If fine-tuning, only fine-tune convolutional blocks 2 through 4
         for c in list(self.resnet.children())[5:]:
             for p in c.parameters():
-                p.requires_grad = fine_tune
+                p.requires_grad = is_trainable
 
     def get_learning_parameters(self):
-        params = list(self.adaptive_pool.parameters())
+        params = list(self.pool.parameters())
         p = []
         if config.train_encoder:
             for c in list(self.resnet.children())[5:]:
