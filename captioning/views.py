@@ -237,7 +237,8 @@ class SearchImage(Resource):
         else:
             bert = BERT()
             bert_model = bert.get_model()
-            caption = self.get_bert_encodings(vocab, query, config, bert_model)
+            bert_tokenizer = bert.get_tokenizer()
+            caption = self.get_bert_encodings(query, config, bert_model, bert_tokenizer)
 
 
         data = (
@@ -246,12 +247,19 @@ class SearchImage(Resource):
             .all()
         )
         cosine_scores = {}
-        for d in data:
+        for index, d in enumerate(data):
             caption_index = d.caption_index
             if caption_index >= 5:
-                cosine_score = self.get_cosine_similarity(
-                    caption, self.get_encodings(vocab, d.caption, config, decoder)
-                )
+                cosine_score = 0.0
+                if embedding_type == "vanilla":
+                    cosine_score = self.get_cosine_similarity(
+                        caption, self.get_encodings(vocab, d.caption, config, decoder)
+                    )
+                else:
+                    cosine_score = self.get_cosine_similarity(
+                        caption, self.get_bert_encodings(d.caption, config, bert_model, bert_tokenizer)
+                    )
+                    cosine_score = [[np.sum(cosine_score)]]
                 if d.image_path not in cosine_scores:
                     cosine_scores[d.image_path] = 0
                 cosine_scores[d.image_path] = max(
@@ -263,7 +271,6 @@ class SearchImage(Resource):
                 cosine_scores.items(), key=lambda item: item[1], reverse=True
             )
         }
-        print(sorted_dict)
         list_images = []
         count = 0
         for k, v in sorted_dict.items():
@@ -281,13 +288,21 @@ class SearchImage(Resource):
         caption = [vocab(vocab.start_word)]
         caption.extend([vocab(token) for token in tokens])
         caption.extend([vocab(vocab.end_word)])
-        for i in range(config.max_length - len(caption)):
+        cap_length = len(caption)
+        if cap_length < config.max_length:
+            for i in range(config.max_length - len(caption)):
+                caption.append(vocab(vocab.pad_word))
+        else:
+            caption = caption[0 : config.max_length - 1]
             caption.append(vocab(vocab.end_word))
-        caption = caption[0 : config.max_length - 1]
-        caption.append(vocab(vocab.end_word))
         caption = torch.Tensor(caption).long().unsqueeze(0)
         encodings = decoder.embedding(caption).squeeze(0)
         encodings = encodings.max(dim=1)
         print("Vanilla Encodings: ", encodings.indices.unsqueeze(0), encodings.indices.unsqueeze(0).shape)
         return encodings.indices.unsqueeze(0)
 
+    def get_bert_encodings(self, query, config, model, tokenizer):
+        inputs = tokenizer(query, return_tensors="pt")
+        outputs = model(**inputs)
+        encodings = outputs.last_hidden_state.squeeze(0)
+        return encodings
