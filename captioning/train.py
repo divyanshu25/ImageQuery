@@ -128,6 +128,7 @@ def train(
                 if device:
                     scores = scores.cuda()
                     targets = targets.cuda()
+                    alphas = alphas.cuda()
                 loss = criterion(scores.data, targets.data)
                 loss += 1 * ((1.0 - alphas.sum(dim=1)) ** 2).mean()
             else:
