@@ -27,10 +27,13 @@ def beam_search(encoder, decoder, image):
     max_len = config.max_length
     encoder_out = encoder(image)
     encoder_out, state = decoder.init_search(encoder_out)
-
     sequences = [
         [0.0, torch.LongTensor([[0]]), [0], state]
     ]  # [Value, curr_word, output_sentence, states]
+    if config.arch_name == "vanilla":
+        sequences = [
+            [0.0, torch.LongTensor([[0]]), [], state]
+        ]
     finished_beams = []
     best_so_far = 0.0
 
