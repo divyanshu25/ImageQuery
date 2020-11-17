@@ -71,7 +71,9 @@ class DecoderAttn(nn.Module):
     def forward(self, features, captions, caption_lengths):
         features = features.view(features.shape[0], -1, self.encoder_size)
 
-        caption_lengths, argsort_ind = torch.sort(caption_lengths.squeeze(1), dim = 0, descending=True)
+        caption_lengths, argsort_ind = torch.sort(
+            caption_lengths.squeeze(1), dim=0, descending=True
+        )
 
         features = features[argsort_ind]
         captions = captions[argsort_ind]
@@ -79,24 +81,21 @@ class DecoderAttn(nn.Module):
         embeddings = self.embedding(captions)
 
         eo = features.mean(dim=1)
-        h = self.h0(eo);
-        c = self.c0(eo);
+        h = self.h0(eo)
+        c = self.c0(eo)
 
-        decode_lengths = (caption_lengths - 1)
+        decode_lengths = caption_lengths - 1
         mcl = torch.max(decode_lengths).item()
-        predictions, alphas = self.initialize_prediction(features.shape, mcl, self.vocab_size)
+        predictions, alphas = self.initialize_prediction(
+            features.shape, mcl, self.vocab_size
+        )
 
         for t in range(mcl):
             mask = (decode_lengths > t).sum()
-            attn_weighted, alpha = self.attn(
-                features[:mask], h[:mask]
-            )
+            attn_weighted, alpha = self.attn(features[:mask], h[:mask])
             attn_weighted = self.sigmoid(self.f_beta(h[:mask])) * attn_weighted
             h, c = self.lstm_cell(
-                torch.cat(
-                    [embeddings[:mask, t, :], attn_weighted],
-                    dim=1,
-                ),
+                torch.cat([embeddings[:mask, t, :], attn_weighted], dim=1),
                 (h[:mask], c[:mask]),
             )
             preds = self.fc(self.dropout(h))

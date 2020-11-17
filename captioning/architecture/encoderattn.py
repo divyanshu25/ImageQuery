@@ -19,25 +19,22 @@ from torch import nn
 import torchvision
 from captioning.captioning_config import Config
 from torch.nn import AdaptiveAvgPool2d as AAP
-from torchvision.models import resnet101#, resnet50
+from torchvision.models import resnet101  # , resnet50
 
 config = Config()
+
 
 class EncoderAttn(nn.Module):
     def __init__(self, embed_dim):
         super(EncoderAttn, self).__init__()
         self.enc_image_size = config.encoded_img_size
 
-        self.pool = AAP(
-            (self.enc_image_size, self.enc_image_size)
-        )
+        self.pool = AAP((self.enc_image_size, self.enc_image_size))
 
         # resnet = resnet50(
         #     pretrained=True
         # )
-        resnet = resnet101(
-            pretrained=True
-        )
+        resnet = resnet101(pretrained=True)
         self.resnet = nn.Sequential(*(list(resnet.children())[:-2]))
         self.train_parameters(config.train_encoder)
 

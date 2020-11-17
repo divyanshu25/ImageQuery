@@ -99,7 +99,9 @@ def train(
             encoder.zero_grad()
             # Obtain the batch.
             images, captions, _ = next(iter(train_loader))
-            images, captions, caption_lengths = convert_captions(images, captions, vocab, config)
+            images, captions, caption_lengths = convert_captions(
+                images, captions, vocab, config
+            )
             if device:
                 images = images.cuda()
                 captions = captions.cuda()
@@ -119,7 +121,9 @@ def train(
                 targets = caps_sorted[:, 1:]
                 # print(f"scores:{outputs}, targets:{targets}")
                 scores = pack_padded_sequence(outputs, decode_lengths, batch_first=True)
-                targets = pack_padded_sequence(targets, decode_lengths, batch_first=True)
+                targets = pack_padded_sequence(
+                    targets, decode_lengths, batch_first=True
+                )
                 # print(f"scores:{scores.data},\n "
                 #       f"targets:{targets.data}")
                 # return
@@ -160,15 +164,20 @@ def train(
             # - - - Validate - - -
 
             if i_step % config.print_every == 0:
-                val_loss = validate(val_loader, encoder, decoder, criterion, device, vocab)
+                val_loss = validate(
+                    val_loader, encoder, decoder, criterion, device, vocab
+                )
                 # Get training statistics.
-                stats = "Epoch [%d/%d], Step [%d/%d], Train Loss: %.4f, Val Loss: %.4f" % (
-                    epoch,
-                    config.epoch_range[-1],
-                    i_step,
-                    total_step,
-                    loss.item(),
-                    val_loss.item(),
+                stats = (
+                    "Epoch [%d/%d], Step [%d/%d], Train Loss: %.4f, Val Loss: %.4f"
+                    % (
+                        epoch,
+                        config.epoch_range[-1],
+                        i_step,
+                        total_step,
+                        loss.item(),
+                        val_loss.item(),
+                    )
                 )
                 print(stats)
                 if config.enable_wandb:
