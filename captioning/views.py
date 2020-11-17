@@ -183,16 +183,9 @@ class ComputeBleu(Resource):
                 reference_corpus.append(original_captions[k])
         # print(candidate_corpus)
         # print(reference_corpus)
-        score = 0.0
-        if bleu_index == 2:
-            score = bleu_score(
-                candidate_corpus, reference_corpus, max_n=2, weights=[0.5, 0.5]
-            )
-        elif bleu_index == 4:
-            score = bleu_score(
-                candidate_corpus, reference_corpus, max_n=4, weights=[0.25, 0.25, 0.25, 0.25]
-            )
-
+        score = bleu_score(
+            candidate_corpus, reference_corpus, max_n=bleu_index, weights=[1.0/bleu_index]*bleu_index
+        )
         return make_response(dict(bleu_Score=score), 200)
 
 
