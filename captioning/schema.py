@@ -21,7 +21,12 @@ class PopulateImageSchema(Schema):
     status = fields.Str(
         required=True,
         validate=validate.OneOf(
-            ["Data Upload Success", "Data Upload Failed", "Invalid Set", "Invalid set or model name"]
+            [
+                "Data Upload Success",
+                "Data Upload Failed",
+                "Invalid Set",
+                "Invalid set or model name",
+            ]
         ),
     )
 

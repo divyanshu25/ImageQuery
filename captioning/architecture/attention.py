@@ -19,22 +19,19 @@ import torch.nn as nn
 from torch.nn import init
 import torch.nn.functional as F
 
+
 class Attention(nn.Module):
     def __init__(self, encoder_size, decoder_size, attention_size):
         super(Attention, self).__init__()
-        self.attn_features = nn.Linear(
-            encoder_size, attention_size
-        )
-        self.attn_embeddings = nn.Linear(
-            decoder_size, attention_size
-        )
-        self.attn_complete = nn.Linear(
-            attention_size, 1
-        )
+        self.attn_features = nn.Linear(encoder_size, attention_size)
+        self.attn_embeddings = nn.Linear(decoder_size, attention_size)
+        self.attn_complete = nn.Linear(attention_size, 1)
         self.relu = nn.ReLU()
 
     def forward(self, encoder_out, decoder_out):
-        attn = self.attn_features(encoder_out) + self.attn_embeddings(decoder_out).unsqueeze(1)
+        attn = self.attn_features(encoder_out) + self.attn_embeddings(
+            decoder_out
+        ).unsqueeze(1)
         alpha = F.softmax(self.attn_complete(self.relu(attn)).squeeze(2), dim=1)
         attn_weighted = (encoder_out * alpha.unsqueeze(2)).sum(dim=1)
         return attn_weighted, alpha

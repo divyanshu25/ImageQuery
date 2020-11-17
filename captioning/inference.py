@@ -31,9 +31,7 @@ def beam_search(encoder, decoder, image):
         [0.0, torch.LongTensor([[0]]), [0], state]
     ]  # [Value, curr_word, output_sentence, states]
     if config.arch_name == "vanilla":
-        sequences = [
-            [0.0, torch.LongTensor([[0]]), [], state]
-        ]
+        sequences = [[0.0, torch.LongTensor([[0]]), [], state]]
     finished_beams = []
     best_so_far = 0.0
 
@@ -52,7 +50,7 @@ def beam_search(encoder, decoder, image):
                         s[0] + val.item(),
                         torch.LongTensor([ix]),
                         s[2] + [ix.item()],
-                        state
+                        state,
                     ]
                 )
                 if ix.item() == 1:

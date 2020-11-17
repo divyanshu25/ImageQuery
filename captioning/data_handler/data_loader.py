@@ -148,7 +148,6 @@ def get_flickr_data_loader(config, flickr_ann_dict, mode="train"):
 
 
 def get_coco_data_loader(config, mode="train"):
-
     def collate_pad(data):
         new_data = []
         for d in data:
@@ -156,9 +155,9 @@ def get_coco_data_loader(config, mode="train"):
             new_captions = []
             for c in captions:
                 for i in range(config.max_char_length - len(c)):
-                    c += '.'
-                c = c[0:config.max_char_length-1]
-                c += '.'
+                    c += "."
+                c = c[0 : config.max_char_length - 1]
+                c += "."
                 new_captions.append(c)
             new_d = (d[0], new_captions, d[2])
             new_data.append(new_d)
@@ -205,7 +204,7 @@ def get_coco_data_loader(config, mode="train"):
         batch_size=config.batch_size,
         num_workers=config.num_workers,
         shuffle=True,
-        collate_fn=collate_pad
+        collate_fn=collate_pad,
     )
 
     return data_loader

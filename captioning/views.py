@@ -35,6 +35,7 @@ from captioning.utils import convert_captions, clean_sentence
 from sklearn.metrics.pairwise import cosine_similarity
 from bert.bert_encoder import BERT
 
+
 @doc(
     summary="Load image captions",
     description="API end point to load image data from disk to the Database.",
@@ -43,7 +44,12 @@ from bert.bert_encoder import BERT
 class PopulateData(Resource):
     @marshal_with(PopulateImageSchema, code=200)
     def get(self, model_name, set):
-        if model_name not in ["coco", "flickr", "flickr_attn", "coco_attn"] or set not in ["test", "train", "val"]:
+        if model_name not in [
+            "coco",
+            "flickr",
+            "flickr_attn",
+            "coco_attn",
+        ] or set not in ["test", "train", "val"]:
             return make_response(dict(status="Invalid set or model name"), 500)
         config = Config()
         data_loader = get_data_loader(config, mode=set, type=config.dataset_type)
@@ -80,7 +86,9 @@ class PopulateData(Resource):
             for i in range(total_step):
                 print("step: {}".format(i))
                 images, captions, image_ids = next(iter(data_loader))
-                images, encoded_captions, caption_lengths = convert_captions(images, captions, vocab, config)
+                images, encoded_captions, caption_lengths = convert_captions(
+                    images, captions, vocab, config
+                )
                 if device:
                     images = images.cuda()
 
@@ -101,7 +109,9 @@ class PopulateData(Resource):
                         image_id = image_ids[k].item()
                     if not db.session.query(
                         db.session.query(ImageCaptions)
-                        .filter_by(image_path=image_id, set="{}_{}".format(model_name, set))
+                        .filter_by(
+                            image_path=image_id, set="{}_{}".format(model_name, set)
+                        )
                         .exists()
                     ).scalar():
                         for index, beam in enumerate(output):
@@ -137,7 +147,11 @@ class PopulateData(Resource):
 
                             if not db.session.query(
                                 db.session.query(ImageCaptions)
-                                .filter_by(image_path=image_id, caption_index=caption_index, set="{}_{}".format(model_name, set))
+                                .filter_by(
+                                    image_path=image_id,
+                                    caption_index=caption_index,
+                                    set="{}_{}".format(model_name, set),
+                                )
                                 .exists()
                             ).scalar():
                                 captions_obj = ImageCaptions(
@@ -155,7 +169,9 @@ class PopulateData(Resource):
                                 db.session.commit()
                             else:
                                 print(
-                                    "Alredy Exist: {}, {}".format(image_id, caption_index)
+                                    "Alredy Exist: {}, {}".format(
+                                        image_id, caption_index
+                                    )
                                 )
             return make_response(dict(status="Data Upload Success"), 200)
         except Exception as e:
@@ -170,7 +186,11 @@ class PopulateData(Resource):
 class ComputeBleu(Resource):
     @marshal_with(BleuScoreSchema, code=200)
     def get(self, model_name, set, bleu_index):
-        if model_name not in ["coco", "flickr", "flickr_attn"] or set not in ["test", "train", "val"]:
+        if model_name not in ["coco", "flickr", "flickr_attn"] or set not in [
+            "test",
+            "train",
+            "val",
+        ]:
             return make_response(dict(status="Invalid set or model name"), 500)
         data = (
             db.session.query(ImageCaptions)
@@ -204,7 +224,10 @@ class ComputeBleu(Resource):
         # print(candidate_corpus)
         # print(reference_corpus)
         score = bleu_score(
-            candidate_corpus, reference_corpus, max_n=bleu_index, weights=[1.0/bleu_index]*bleu_index
+            candidate_corpus,
+            reference_corpus,
+            max_n=bleu_index,
+            weights=[1.0 / bleu_index] * bleu_index,
         )
         return make_response(dict(bleu_Score=score), 200)
 
@@ -220,7 +243,11 @@ class SearchImage(Resource):
 
         config = Config()
 
-        if model_name not in ["coco", "flickr", "flickr_attn"] and embedding_type not in ["vanilla", "bert"]:
+        if model_name not in [
+            "coco",
+            "flickr",
+            "flickr_attn",
+        ] and embedding_type not in ["vanilla", "bert"]:
             return make_response(dict(status="Invalid model name"), 500)
         if model_name == "flickr":
             vocab = get_vocabulary(config, "flickr8k")
@@ -240,7 +267,6 @@ class SearchImage(Resource):
             bert_tokenizer = bert.get_tokenizer()
             caption = self.get_bert_encodings(query, config, bert_model, bert_tokenizer)
 
-
         data = (
             db.session.query(ImageCaptions)
             .filter_by(set="{}_{}".format(model_name, "test"))
@@ -257,7 +283,10 @@ class SearchImage(Resource):
                     )
                 else:
                     cosine_score = self.get_cosine_similarity(
-                        caption, self.get_bert_encodings(d.caption, config, bert_model, bert_tokenizer)
+                        caption,
+                        self.get_bert_encodings(
+                            d.caption, config, bert_model, bert_tokenizer
+                        ),
                     )
                     cosine_score = [[np.sum(cosine_score)]]
                 if d.image_path not in cosine_scores:
@@ -298,7 +327,6 @@ class SearchImage(Resource):
         caption = torch.Tensor(caption).long().unsqueeze(0)
         encodings = decoder.embedding(caption).squeeze(0)
         encodings = encodings.max(dim=1)
-        print("Vanilla Encodings: ", encodings.indices.unsqueeze(0), encodings.indices.unsqueeze(0).shape)
         return encodings.indices.unsqueeze(0)
 
     def get_bert_encodings(self, query, config, model, tokenizer):

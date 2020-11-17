@@ -25,7 +25,9 @@ class ImageCaptions(db.Model):
         db.String(64), primary_key=True, index=True, unique=False, nullable=False
     )
     caption_index = db.Column(db.Integer, primary_key=True, nullable=False)
-    set = db.Column(db.String(64), primary_key=True, index=True, unique=False, nullable=True)
+    set = db.Column(
+        db.String(64), primary_key=True, index=True, unique=False, nullable=True
+    )
     # index 5 is the generated caption
     # 1 2 3 4 5, 6 7 8
     caption = db.Column(db.String(1024), index=False, unique=False, nullable=True)
