@@ -26,7 +26,7 @@ api.add_resource(
     ComputeBleu, "compute/bleu/<string:model_name>/<string:set>/<int:bleu_index>", endpoint="bleu"
 )
 api.add_resource(
-    SearchImage, "search/<string:model_name>/<string:query>", endpoint="search"
+    SearchImage, "search/<string:model_name>/<string:embedding_type>/<string:query>", endpoint="search"
 )
 
 

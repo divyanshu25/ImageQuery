@@ -33,7 +33,7 @@ import numpy as np
 from torchtext.data.metrics import bleu_score
 from captioning.utils import convert_captions, clean_sentence
 from sklearn.metrics.pairwise import cosine_similarity
-
+from bert.bert_encoder import BERT
 
 @doc(
     summary="Load image captions",
@@ -196,10 +196,11 @@ class ComputeBleu(Resource):
 )
 class SearchImage(Resource):
     @marshal_with(PopulateSearchSchema, code=200)
-    def get(self, model_name, query):
+    def get(self, model_name, embedding_type, query):
+
         config = Config()
 
-        if model_name not in ["coco", "flickr", "flickr_attn"]:
+        if model_name not in ["coco", "flickr", "flickr_attn"] and embedding_type not in ["vanilla", "bert"]:
             return make_response(dict(status="Invalid model name"), 500)
         if model_name == "flickr":
             vocab = get_vocabulary(config, "flickr8k")
@@ -207,10 +208,17 @@ class SearchImage(Resource):
             vocab = get_vocabulary(config, "coco")
         vocab_size = len(vocab)
 
-        encoder, decoder = get_encoder_decoder(
-            config.embed_size, config.hidden_size, vocab_size
-        )
-        caption = self.get_encodings(vocab, query, config, decoder)
+        caption = None
+        if embedding_type == "vanilla":
+            encoder, decoder = get_encoder_decoder(
+                config.embed_size, config.hidden_size, vocab_size
+            )
+            caption = self.get_encodings(vocab, query, config, decoder)
+        else:
+            bert = BERT()
+            bert_model = bert.get_model()
+            caption = self.get_bert_encodings(vocab, query, config, bert_model)
+
 
         data = (
             db.session.query(ImageCaptions)
@@ -260,4 +268,6 @@ class SearchImage(Resource):
         caption = torch.Tensor(caption).long().unsqueeze(0)
         encodings = decoder.embedding(caption).squeeze(0)
         encodings = encodings.max(dim=1)
+        print("Vanilla Encodings: ", encodings.indices.unsqueeze(0), encodings.indices.unsqueeze(0).shape)
         return encodings.indices.unsqueeze(0)
+
