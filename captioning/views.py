@@ -14,7 +14,7 @@
 #   limitations under the License.
 #   ==================================================================
 import math
-
+import traceback
 import nltk
 from flask import make_response, request
 from flask_apispec import marshal_with, doc, use_kwargs
@@ -43,7 +43,7 @@ from bert.bert_encoder import BERT
 class PopulateData(Resource):
     @marshal_with(PopulateImageSchema, code=200)
     def get(self, model_name, set):
-        if model_name not in ["coco", "flickr", "flickr_attn"] or set not in ["test", "train", "val"]:
+        if model_name not in ["coco", "flickr", "flickr_attn", "coco_attn"] or set not in ["test", "train", "val"]:
             return make_response(dict(status="Invalid set or model name"), 500)
         config = Config()
         data_loader = get_data_loader(config, mode=set, type=config.dataset_type)
@@ -80,14 +80,25 @@ class PopulateData(Resource):
             for i in range(total_step):
                 print("step: {}".format(i))
                 images, captions, image_ids = next(iter(data_loader))
-                images, captions, caption_lengths = convert_captions(images, captions, vocab, config)
+                images, encoded_captions, caption_lengths = convert_captions(images, captions, vocab, config)
                 if device:
                     images = images.cuda()
+
+                if "flickr" in model_name:
+                    num_captions = 1
+                    if captions is not None:
+                        captions = [captions]
+                else:
+                    num_captions = 5
 
                 for k in range(images.shape[0]):
                     image = images[k].unsqueeze(0)
                     output = beam_search(encoder, decoder, image)
-                    image_id = image_ids[k].split("#")[0]
+                    # image_id = image_ids[k].split("#")[0]
+                    if "flickr" in model_name:
+                        image_id = image_ids[k].split("#")[0]
+                    else:
+                        image_id = image_ids[k].item()
                     if not db.session.query(
                         db.session.query(ImageCaptions)
                         .filter_by(image_path=image_id, set="{}_{}".format(model_name, set))
@@ -113,34 +124,43 @@ class PopulateData(Resource):
                         print("Already Exist: {}".format(image_id))
 
                     if captions is not None:
-                        sentence = clean_sentence(captions[k].cpu().numpy(), vocab)
-                        caption_index = image_ids[k].split("#")[1]
+                        for i in range(num_captions):
+                            sentence = captions[i][k]
+                            # print(caption)
+                            # sentence = clean_sentence(caption.cpu().numpy(), vocab)
+                            if model_name == "flickr":
+                                caption_index = image_ids[k].split("#")[1]
+                            else:
+                                caption_index = i
+                            # sentence = clean_sentence(captions[k].cpu().numpy(), vocab)
+                            # caption_index = image_ids[k].split("#")[1]
 
-                        if not db.session.query(
-                            db.session.query(ImageCaptions)
-                            .filter_by(image_path=image_id, caption_index=caption_index, set="{}_{}".format(model_name, set))
-                            .exists()
-                        ).scalar():
-                            captions_obj = ImageCaptions(
-                                image_path=image_id,
-                                caption_index=caption_index,
-                                set="{}_{}".format(model_name, set),
-                                caption=sentence,
-                            )
-                            print(
-                                "Inserting Prediction {}, {}".format(
-                                    image_id, caption_index
+                            if not db.session.query(
+                                db.session.query(ImageCaptions)
+                                .filter_by(image_path=image_id, caption_index=caption_index, set="{}_{}".format(model_name, set))
+                                .exists()
+                            ).scalar():
+                                captions_obj = ImageCaptions(
+                                    image_path=image_id,
+                                    caption_index=caption_index,
+                                    set="{}_{}".format(model_name, set),
+                                    caption=sentence,
                                 )
-                            )
-                            db.session.add(captions_obj)
-                            db.session.commit()
-                        else:
-                            print(
-                                "Alredy Exist: {}, {}".format(image_id, caption_index)
-                            )
+                                print(
+                                    "Inserting Prediction {}, {}".format(
+                                        image_id, caption_index
+                                    )
+                                )
+                                db.session.add(captions_obj)
+                                db.session.commit()
+                            else:
+                                print(
+                                    "Alredy Exist: {}, {}".format(image_id, caption_index)
+                                )
             return make_response(dict(status="Data Upload Success"), 200)
         except Exception as e:
             print(e)
+            print(traceback.print_stack(e))
             return make_response(dict(status="Data Upload Failed"), 500)
 
 
