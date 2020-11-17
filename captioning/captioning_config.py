@@ -109,3 +109,4 @@ class Config(Flickr_Config, COCO_Config):
         self.attn_size = 512
         self.encoded_img_size = 14
         self.dropout = 0.5
+        self.max_char_length = 150

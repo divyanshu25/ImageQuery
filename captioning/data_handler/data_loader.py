@@ -20,6 +20,7 @@ import torchvision
 from torch.utils.data import Dataset, DataLoader, sampler, Subset
 from torchvision import transforms
 import torchvision.datasets as dset
+from torch.utils.data._utils.collate import default_collate
 
 from captioning.data_handler.flickr_dataset import Flickr8kCustom
 from captioning.data_handler.vocabulary import Vocabulary
@@ -148,6 +149,21 @@ def get_flickr_data_loader(config, flickr_ann_dict, mode="train"):
 
 def get_coco_data_loader(config, mode="train"):
 
+    def collate_pad(data):
+        new_data = []
+        for d in data:
+            captions = d[1]
+            new_captions = []
+            for c in captions:
+                for i in range(config.max_char_length - len(c)):
+                    c += '.'
+                c = c[0:config.max_char_length-1]
+                c += '.'
+                new_captions.append(c)
+            new_d = (d[0], new_captions, d[2])
+            new_data.append(new_d)
+        return default_collate(new_data)
+
     transform = transforms.Compose(
         [
             torchvision.transforms.Resize(256),
@@ -189,6 +205,7 @@ def get_coco_data_loader(config, mode="train"):
         batch_size=config.batch_size,
         num_workers=config.num_workers,
         shuffle=True,
+        collate_fn=collate_pad
     )
 
     return data_loader
