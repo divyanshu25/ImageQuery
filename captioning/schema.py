@@ -45,7 +45,9 @@ class BleuScoreSchema(Schema):
 
 
 class PopulateSearchSchema(Schema):
-    status = fields.Str(required=True, validate=validate.OneOf(["Invalid model name"]))
+    status = fields.Str(
+        required=True, validate=validate.OneOf(["Invalid set or model name"])
+    )
     image_ids = fields.Str(required=True)
 
     class Meta:
