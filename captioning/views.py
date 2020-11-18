@@ -34,7 +34,7 @@ from torchtext.data.metrics import bleu_score
 from captioning.utils import convert_captions, clean_sentence
 from sklearn.metrics.pairwise import cosine_similarity
 from bert.bert_encoder import BERT
-
+import sys
 
 @doc(
     summary="Load image captions",
@@ -239,7 +239,7 @@ class ComputeBleu(Resource):
 )
 class SearchImage(Resource):
     @marshal_with(PopulateSearchSchema, code=200)
-    def get(self, model_name, query):
+    def get(self, model_name, bleu_index, query):
 
         config = Config()
 
@@ -249,16 +249,6 @@ class SearchImage(Resource):
             "flickr_attn",
         ]:
             return make_response(dict(status="Invalid model name"), 500)
-        if model_name == "flickr":
-            vocab = get_vocabulary(config, "flickr8k")
-        else:
-            vocab = get_vocabulary(config, "coco")
-        vocab_size = len(vocab)
-
-        encoder, decoder = get_encoder_decoder(
-            config.embed_size, config.hidden_size, vocab_size
-        )
-        # caption = self.get_encodings(vocab, query, config, decoder)
 
         data = (
             db.session.query(ImageCaptions)
@@ -274,8 +264,8 @@ class SearchImage(Resource):
                         bleu_score(
                             [nltk.tokenize.word_tokenize(query)],
                             [[nltk.tokenize.word_tokenize(d.caption)]],
-                            max_n=1,
-                            weights=[1.0],
+                            max_n=bleu_index,
+                            weights=[1.0/bleu_index]*bleu_index,
                         )
                     ]
                 ]
@@ -295,6 +285,8 @@ class SearchImage(Resource):
         list_images = []
         count = 0
         for k, v in sorted_dict.items():
+            print(f"BleuScore for Image: {k} is {v}")
+            sys.stdout.flush()
             list_images.append(k)
             count += 1
             if count == 5:
