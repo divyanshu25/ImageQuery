@@ -16,10 +16,11 @@
 import math
 import traceback
 import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords
 from flask import make_response, request
 from flask_apispec import marshal_with, doc, use_kwargs
 from flask_apispec import MethodResource as Resource
-
 from captioning.architecture.archpicker import get_encoder_decoder
 from captioning.schema import PopulateImageSchema, BleuScoreSchema, PopulateSearchSchema
 from captioning.captioning_config import Config
@@ -27,15 +28,10 @@ from captioning.data_handler.data_loader import get_data_loader, get_vocabulary
 from captioning.main import get_device
 from captioning.inference import beam_search
 from models import ImageCaptions, db
-import os
 import torch
-import numpy as np
 from torchtext.data.metrics import bleu_score
 from captioning.utils import convert_captions, clean_sentence
-from sklearn.metrics.pairwise import cosine_similarity
-from bert.bert_encoder import BERT
 import sys
-from nltk.corpus import stopwords
 
 stopset = set(stopwords.words("english"))
 
@@ -246,8 +242,7 @@ class ComputeBleu(Resource):
 )
 class SearchImage(Resource):
     @marshal_with(PopulateSearchSchema, code=200)
-    def get(self, model_name, set, bleu_index, query):
-
+    def get(self, model_name, set, bleu_index, filter, query):
         config = Config()
 
         if model_name not in [
@@ -255,7 +250,7 @@ class SearchImage(Resource):
             "flickr",
             "flickr_attn",
             "coco_attn",
-        ] or set not in ["test", "train", "val"]:
+        ] or set not in ["test", "train", "val"] or filter not in ["True", "False"]:
             return make_response(dict(status="Invalid set or model name"), 500)
 
         data = (
@@ -272,14 +267,8 @@ class SearchImage(Resource):
                 bleu_sc = [
                     [
                         bleu_score(
-                            [self.filter_stopwords(nltk.tokenize.word_tokenize(query))],
-                            [
-                                [
-                                    self.filter_stopwords(
-                                        nltk.tokenize.word_tokenize(unpadded_caption)
-                                    )
-                                ]
-                            ],
+                            [self.filter_stopwords(nltk.tokenize.word_tokenize(query), filter)],
+                            [[self.filter_stopwords(nltk.tokenize.word_tokenize(unpadded_caption), filter)]],
                             max_n=bleu_index,
                             weights=[1.0 / bleu_index] * bleu_index,
                         )
@@ -309,35 +298,11 @@ class SearchImage(Resource):
                 break
         return make_response(dict(image_ids=str(list_images)), 200)
 
-    def filter_stopwords(self, tokens):
+    def filter_stopwords(self, tokens, filter="False"):
+        if filter == "False":
+            return tokens
         filtered = []
         for token in tokens:
             if token not in stopset:
                 filtered.append(token)
         return filtered
-
-    def get_cosine_similarity(self, a, b):
-        return cosine_similarity(a.detach().numpy(), b.detach().numpy())
-
-    def get_encodings(self, vocab, query, config, decoder):
-        tokens = nltk.tokenize.word_tokenize(query)
-        caption = [vocab(vocab.start_word)]
-        caption.extend([vocab(token) for token in tokens])
-        caption.extend([vocab(vocab.end_word)])
-        cap_length = len(caption)
-        if cap_length < config.max_length:
-            for i in range(config.max_length - len(caption)):
-                caption.append(vocab(vocab.pad_word))
-        else:
-            caption = caption[0 : config.max_length - 1]
-            caption.append(vocab(vocab.end_word))
-        caption = torch.Tensor(caption).long().unsqueeze(0)
-        encodings = decoder.embedding(caption).squeeze(0)
-        encodings = encodings.max(dim=1)
-        return encodings.indices.unsqueeze(0)
-
-    def get_bert_encodings(self, query, config, model, tokenizer):
-        inputs = tokenizer(query, return_tensors="pt")
-        outputs = model(**inputs)
-        encodings = outputs.last_hidden_state.squeeze(0)
-        return encodings
