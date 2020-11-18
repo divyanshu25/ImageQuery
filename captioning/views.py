@@ -239,7 +239,7 @@ class ComputeBleu(Resource):
 )
 class SearchImage(Resource):
     @marshal_with(PopulateSearchSchema, code=200)
-    def get(self, model_name, embedding_type, query):
+    def get(self, model_name, query):
 
         config = Config()
 
@@ -247,7 +247,7 @@ class SearchImage(Resource):
             "coco",
             "flickr",
             "flickr_attn",
-        ] and embedding_type not in ["vanilla", "bert"]:
+        ]:
             return make_response(dict(status="Invalid model name"), 500)
         if model_name == "flickr":
             vocab = get_vocabulary(config, "flickr8k")
@@ -255,51 +255,43 @@ class SearchImage(Resource):
             vocab = get_vocabulary(config, "coco")
         vocab_size = len(vocab)
 
-        caption = None
-        if embedding_type == "vanilla":
-            encoder, decoder = get_encoder_decoder(
-                config.embed_size, config.hidden_size, vocab_size
-            )
-            caption = self.get_encodings(vocab, query, config, decoder)
-        else:
-            bert = BERT()
-            bert_model = bert.get_model()
-            bert_tokenizer = bert.get_tokenizer()
-            caption = self.get_bert_encodings(query, config, bert_model, bert_tokenizer)
+        encoder, decoder = get_encoder_decoder(
+            config.embed_size, config.hidden_size, vocab_size
+        )
+        # caption = self.get_encodings(vocab, query, config, decoder)
 
         data = (
             db.session.query(ImageCaptions)
             .filter_by(set="{}_{}".format(model_name, "test"))
             .all()
         )
-        cosine_scores = {}
+        similarity_scores = {}
         for index, d in enumerate(data):
             caption_index = d.caption_index
             if caption_index >= 5:
-                cosine_score = 0.0
-                if embedding_type == "vanilla":
-                    cosine_score = self.get_cosine_similarity(
-                        caption, self.get_encodings(vocab, d.caption, config, decoder)
-                    )
-                else:
-                    cosine_score = self.get_cosine_similarity(
-                        caption,
-                        self.get_bert_encodings(
-                            d.caption, config, bert_model, bert_tokenizer
-                        ),
-                    )
-                    cosine_score = [[np.sum(cosine_score)]]
-                if d.image_path not in cosine_scores:
-                    cosine_scores[d.image_path] = 0
-                cosine_scores[d.image_path] = max(
-                    cosine_scores[d.image_path], cosine_score[0][0]
+                bleu_sc = [
+                    [
+                        bleu_score(
+                            [nltk.tokenize.word_tokenize(query)],
+                            [[nltk.tokenize.word_tokenize(d.caption)]],
+                            max_n=1,
+                            weights=[1.0],
+                        )
+                    ]
+                ]
+
+                if d.image_path not in similarity_scores:
+                    similarity_scores[d.image_path] = 0
+                similarity_scores[d.image_path] = max(
+                    bleu_sc[0][0], similarity_scores[d.image_path]
                 )
         sorted_dict = {
             k: v
             for k, v in sorted(
-                cosine_scores.items(), key=lambda item: item[1], reverse=True
+                similarity_scores.items(), key=lambda item: item[1], reverse=True
             )
         }
+        # print(sorted_dict)
         list_images = []
         count = 0
         for k, v in sorted_dict.items():
