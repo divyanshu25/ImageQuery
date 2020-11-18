@@ -29,7 +29,7 @@ api.add_resource(
 )
 api.add_resource(
     SearchImage,
-    "search/<string:model_name>/<string:embedding_type>/<string:query>",
+    "search/<string:model_name>/<string:query>",
     endpoint="search",
 )
 
