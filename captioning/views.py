@@ -35,6 +35,10 @@ from captioning.utils import convert_captions, clean_sentence
 from sklearn.metrics.pairwise import cosine_similarity
 from bert.bert_encoder import BERT
 import sys
+from nltk.corpus import stopwords
+
+stopset = set(stopwords.words("english"))
+
 
 @doc(
     summary="Load image captions",
@@ -186,11 +190,12 @@ class PopulateData(Resource):
 class ComputeBleu(Resource):
     @marshal_with(BleuScoreSchema, code=200)
     def get(self, model_name, set, bleu_index):
-        if model_name not in ["coco", "flickr", "flickr_attn"] or set not in [
-            "test",
-            "train",
-            "val",
-        ]:
+        if model_name not in [
+            "coco",
+            "flickr",
+            "flickr_attn",
+            "coco_attn",
+        ] or set not in ["test", "train", "val"]:
             return make_response(dict(status="Invalid set or model name"), 500)
         data = (
             db.session.query(ImageCaptions)
@@ -203,10 +208,12 @@ class ComputeBleu(Resource):
             image_id = d.image_path
             caption_id = d.caption_index
             if caption_id < 5:
+                unpadded_caption = d.caption.rstrip(" .")
+                unpadded_caption += " ."
                 if image_id not in original_captions:
                     original_captions[image_id] = []
                 original_captions[image_id].append(
-                    nltk.tokenize.word_tokenize(d.caption.lower())
+                    nltk.tokenize.word_tokenize(unpadded_caption.lower())
                 )
             else:
                 if image_id not in predicted_captions:
@@ -239,7 +246,7 @@ class ComputeBleu(Resource):
 )
 class SearchImage(Resource):
     @marshal_with(PopulateSearchSchema, code=200)
-    def get(self, model_name, bleu_index, query):
+    def get(self, model_name, set, bleu_index, query):
 
         config = Config()
 
@@ -247,25 +254,34 @@ class SearchImage(Resource):
             "coco",
             "flickr",
             "flickr_attn",
-        ]:
-            return make_response(dict(status="Invalid model name"), 500)
+            "coco_attn",
+        ] or set not in ["test", "train", "val"]:
+            return make_response(dict(status="Invalid set or model name"), 500)
 
         data = (
             db.session.query(ImageCaptions)
-            .filter_by(set="{}_{}".format(model_name, "test"))
+            .filter_by(set="{}_{}".format(model_name, set))
             .all()
         )
         similarity_scores = {}
         for index, d in enumerate(data):
             caption_index = d.caption_index
             if caption_index >= 5:
+                unpadded_caption = d.caption.rstrip(" .")
+                unpadded_caption += " ."
                 bleu_sc = [
                     [
                         bleu_score(
-                            [nltk.tokenize.word_tokenize(query)],
-                            [[nltk.tokenize.word_tokenize(d.caption)]],
+                            [self.filter_stopwords(nltk.tokenize.word_tokenize(query))],
+                            [
+                                [
+                                    self.filter_stopwords(
+                                        nltk.tokenize.word_tokenize(unpadded_caption)
+                                    )
+                                ]
+                            ],
                             max_n=bleu_index,
-                            weights=[1.0/bleu_index]*bleu_index,
+                            weights=[1.0 / bleu_index] * bleu_index,
                         )
                     ]
                 ]
@@ -292,6 +308,13 @@ class SearchImage(Resource):
             if count == 5:
                 break
         return make_response(dict(image_ids=str(list_images)), 200)
+
+    def filter_stopwords(self, tokens):
+        filtered = []
+        for token in tokens:
+            if token not in stopset:
+                filtered.append(token)
+        return filtered
 
     def get_cosine_similarity(self, a, b):
         return cosine_similarity(a.detach().numpy(), b.detach().numpy())
