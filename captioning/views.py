@@ -16,7 +16,8 @@
 import math
 import traceback
 import nltk
-nltk.download('stopwords')
+
+nltk.download("stopwords")
 from nltk.corpus import stopwords
 from flask import make_response, request
 from flask_apispec import marshal_with, doc, use_kwargs
@@ -245,12 +246,11 @@ class SearchImage(Resource):
     def get(self, model_name, set, bleu_index, filter, query):
         config = Config()
 
-        if model_name not in [
-            "coco",
-            "flickr",
-            "flickr_attn",
-            "coco_attn",
-        ] or set not in ["test", "train", "val"] or filter not in ["True", "False"]:
+        if (
+            model_name not in ["coco", "flickr", "flickr_attn", "coco_attn"]
+            or set not in ["test", "train", "val"]
+            or filter not in ["True", "False"]
+        ):
             return make_response(dict(status="Invalid set or model name"), 500)
 
         data = (
@@ -267,8 +267,19 @@ class SearchImage(Resource):
                 bleu_sc = [
                     [
                         bleu_score(
-                            [self.filter_stopwords(nltk.tokenize.word_tokenize(query), filter)],
-                            [[self.filter_stopwords(nltk.tokenize.word_tokenize(unpadded_caption), filter)]],
+                            [
+                                self.filter_stopwords(
+                                    nltk.tokenize.word_tokenize(query), filter
+                                )
+                            ],
+                            [
+                                [
+                                    self.filter_stopwords(
+                                        nltk.tokenize.word_tokenize(unpadded_caption),
+                                        filter,
+                                    )
+                                ]
+                            ],
                             max_n=bleu_index,
                             weights=[1.0 / bleu_index] * bleu_index,
                         )

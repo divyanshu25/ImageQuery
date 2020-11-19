@@ -71,15 +71,15 @@ def beam_search(encoder, decoder, image):
     return output_sentences
 
 
-def get_predict(images, encoder, decoder, vocab, captions=None):
+def get_predict(images, encoder, decoder, vocab, captions=None, bert=None):
     for i in range(images.shape[0]):
         image = images[i].unsqueeze(0)
         output = beam_search(encoder, decoder, image)
         for index, s in enumerate(output):
-            sentence = clean_sentence(s, vocab)
+            sentence = clean_sentence(s, vocab, bert=bert, use_bert=config.enable_bert)
             print("Predicted Caption {}: ".format(index) + str(sentence))
         if captions is not None:
             print(
-                "Original Caption: " + clean_sentence(captions[i].cpu().numpy(), vocab)
+                "Original Caption: " + clean_sentence(captions[i].cpu().numpy().tolist(), vocab, bert=bert, use_bert=config.enable_bert)
             )
         imshow(image[0])

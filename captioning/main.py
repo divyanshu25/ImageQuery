@@ -22,10 +22,12 @@ from captioning.train import train
 from captioning.inference import get_predict
 import torch.nn as nn
 import torch
+from bert.bert_encoder import BERT
 
 # from utils import display_image
 
 config = CaptioningConfig()
+bert = BERT()
 
 
 def execute():
@@ -44,12 +46,13 @@ def train_and_validate():
     device = get_device()
     train_loader = get_data_loader(config, mode="train", type=config.dataset_type)
     val_loader = get_data_loader(config, mode="val", type=config.dataset_type)
-    vocab = get_vocabulary(config, type=config.dataset_type)
+    vocab = get_vocabulary(config, type=config.dataset_type, bert=bert)
     vocab_size = len(vocab)
+    print("Vocab Size: ", vocab_size)
     # print_stats(train_loader, val_loader)
     # Step2: Define and Initialize Neural Net/ Model Class/ Hypothesis(H).
     encoder, decoder = get_encoder_decoder(
-        config.embed_size, config.hidden_size, vocab_size
+        config.embed_size, config.hidden_size, vocab_size, bert
     )
     criterion = nn.CrossEntropyLoss()
     if device:
@@ -81,19 +84,27 @@ def train_and_validate():
             decoder.load_state_dict(torch.load(config.decoder_file))
 
     train(
-        encoder, decoder, optimizer, criterion, train_loader, val_loader, device, vocab
+        encoder,
+        decoder,
+        optimizer,
+        criterion,
+        train_loader,
+        val_loader,
+        device,
+        vocab,
+        bert,
     )
 
 
 def predict():
     test_loader = get_data_loader(config, mode="test", type=config.dataset_type)
-    vocab = get_vocabulary(config, type=config.dataset_type)
+    vocab = get_vocabulary(config, type=config.dataset_type, bert=bert)
     vocab_size = len(vocab)
 
     device = get_device()
 
     encoder, decoder = get_encoder_decoder(
-        config.embed_size, config.hidden_size, vocab_size
+        config.embed_size, config.hidden_size, vocab_size, bert=bert
     )
     if device:
         encoder = encoder.cuda()
@@ -115,11 +126,11 @@ def predict():
 
     images, captions, _ = next(iter(test_loader))
     images, captions, captions_length = convert_captions(
-        images, captions, vocab, config
+        images, captions, vocab, config, bert=bert
     )
     if device:
         images = images.cuda()
-    get_predict(images, encoder, decoder, vocab, captions)
+    get_predict(images, encoder, decoder, vocab, captions=captions, bert=bert)
 
 
 if __name__ == "__main__":

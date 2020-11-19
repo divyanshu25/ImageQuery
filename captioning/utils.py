@@ -20,7 +20,6 @@ import numpy as np
 import nltk
 import torch
 
-
 def imshow(img, txt=None):
     img = img / 2 + 0.5  # unnormalize
     npimg = img.numpy()
@@ -40,13 +39,18 @@ def display_image(images, labels, data_loader):
     # imshow(torchvision.utils.make_grid(images))
 
 
-def clean_sentence(output, vocab):
+def clean_sentence(output, vocab, bert=None, use_bert=False):
     # output = output.numpy()
     words_sequence = []
     for i in output:
-        words_sequence.append(vocab.idx2word[i])
-        if i == 1:
-            break
+        if use_bert:
+            words_sequence.append(bert.get_tokenizer().convert_ids_to_tokens(i))
+            if i == 102:
+                break
+        else:
+            words_sequence.append(vocab.idx2word[i])
+            if i == 1:
+                break
 
     words_sequence = words_sequence[1:-1]
     sentence = " ".join(words_sequence)
@@ -55,7 +59,7 @@ def clean_sentence(output, vocab):
     return sentence
 
 
-def convert_captions(images, target, vocab, config):
+def convert_captions(images, target, vocab, config, bert=None):
     # images, target = input
     all_captions = None
     caption_lengths = None
@@ -67,19 +71,37 @@ def convert_captions(images, target, vocab, config):
         caption_lengths = []
         for c in target:
             caption = []
-            tokens = nltk.tokenize.word_tokenize(str(c).lower())
-            caption.append(vocab(vocab.start_word))
-            caption.extend([vocab(token) for token in tokens])
-            caption.append(vocab(vocab.end_word))
-            cap_length = len(caption)
-            if cap_length < config.max_length:
-                for i in range(config.max_length - len(caption)):
-                    caption.append(vocab(vocab.pad_word))
-            else:
-                caption = caption[0 : config.max_length - 1]
+            if not config.enable_bert:
+                tokens = nltk.tokenize.word_tokenize(str(c).lower())
+                caption.append(vocab(vocab.start_word))
+                caption.extend([vocab(token) for token in tokens])
                 caption.append(vocab(vocab.end_word))
                 cap_length = len(caption)
-            caption_lengths.append(cap_length)
+                if cap_length < config.max_length:
+                    for i in range(config.max_length - len(caption)):
+                        caption.append(vocab(vocab.pad_word))
+                else:
+                    caption = caption[0 : config.max_length - 1]
+                    caption.append(vocab(vocab.end_word))
+                    cap_length = len(caption)
+                caption_lengths.append(cap_length)
+            else:
+                tokenizer = bert.get_tokenizer()
+                tokens = tokenizer.tokenize(str(c).lower())
+                caption.append(tokenizer.cls_token_id)
+                caption.extend(
+                    [tokenizer.convert_tokens_to_ids(token) for token in tokens]
+                )
+                caption.append(tokenizer.sep_token_id)
+                cap_length = len(caption)
+                if cap_length < config.max_length:
+                    for i in range(config.max_length - len(caption)):
+                        caption.append(tokenizer.sep_token_id)
+                else:
+                    caption = caption[0 : config.max_length - 1]
+                    caption.append(tokenizer.sep_token_id)
+                    cap_length = len(caption)
+                caption_lengths.append(cap_length)
             all_captions.append(caption)
         # caption = caption[:1]
         all_captions = torch.Tensor(all_captions).long()
