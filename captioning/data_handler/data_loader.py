@@ -41,8 +41,11 @@ def get_data_loader(config, mode="train", type="flickr8k"):
     return data_loader
 
 
-def get_vocabulary(config, type="flickr8k"):
+def get_vocabulary(config, type="flickr8k", bert=None):
     vocab = None
+
+    if config.enable_bert:
+        return bert.get_tokenizer().get_vocab()
 
     if type == "flickr8k":
         vocab = Vocabulary(
@@ -65,6 +68,7 @@ def get_vocabulary(config, type="flickr8k"):
             vocab.add_captions(parse_coco(config.train_ann_file_coco))
             vocab.add_captions(parse_coco(config.val_ann_file_coco))
             vocab.dump_vocab_in_file()
+
     else:
         print("Wrong dataset type received : " + type)
 

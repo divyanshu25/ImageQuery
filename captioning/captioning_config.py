@@ -24,7 +24,9 @@ class BaseConfig:
         self.models_dir = os.path.join(ROOT_DIR, "captioning/models")
         self.data_dir = os.path.join(ROOT_DIR, "captioning/data/")
         self.enable_wandb = False
-        self.verbose = True
+        self.verbose = False
+        self.enable_bert = True
+        self.arch_name = "attention"
 
 
 class COCO_Config(BaseConfig):
@@ -71,13 +73,13 @@ class Config(Flickr_Config, COCO_Config):
 
     def __init__(self):
         super(Config, self).__init__()
-        self.encoder_prefix = "encoder_flickr_attn"
-        self.decoder_prefix = "decoder_flickr_attn"
+        self.encoder_prefix = "encoder_flickr_attn_bert"
+        self.decoder_prefix = "decoder_flickr_attn_bert"
         self.encoder_file = os.path.join(
-            self.models_dir, "{}-19.pth".format(self.encoder_prefix)
+            self.models_dir, "{}-4.pth".format(self.encoder_prefix)
         )
         self.decoder_file = os.path.join(
-            self.models_dir, "{}-19.pth".format(self.decoder_prefix)
+            self.models_dir, "{}-4.pth".format(self.decoder_prefix)
         )
         self.vocab_file = os.path.join(
             self.data_dir, "vocab_{}.pkl".format(self.dataset_type)
@@ -85,7 +87,7 @@ class Config(Flickr_Config, COCO_Config):
         self.batch_size = 128  # batch size
         self.vocab_threshold = 5  # minimum word count threshold
         self.vocab_from_file = True  # if True, load existing vocab file
-        self.embed_size = 512  # dimensionality of image and word embeddings
+        self.embed_size = 768  # dimensionality of image and word embeddings
         self.hidden_size = 512  # number of features in hidden state of the RNN decoder
         self.epoch_range = range(1, 20)  # number of training epochs
         self.save_every = 1  # determines frequency of saving model weights
@@ -104,7 +106,6 @@ class Config(Flickr_Config, COCO_Config):
         self.beam_size = 5
         self.max_length = 40
         self.train_encoder = False
-        self.arch_name = "attention"
         self.features_img_size = 2048
         self.attn_size = 512
         self.encoded_img_size = 14

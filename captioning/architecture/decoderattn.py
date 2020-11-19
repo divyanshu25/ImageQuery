@@ -31,7 +31,7 @@ class DecoderAttn(nn.Module):
     Link: https://arxiv.org/abs/1502.03044
     """
 
-    def __init__(self, embed_size, decoder_size, vocab_size):
+    def __init__(self, embed_size, decoder_size, vocab_size, bert=None):
         super(DecoderAttn, self).__init__()
 
         self.encoder_size, self.attn_size, self.embed_size, self.decoder_size, self.vocab_size, self.dropout = (
@@ -51,6 +51,8 @@ class DecoderAttn(nn.Module):
 
         self.embedding = nn.Embedding(vocab_size, embed_size)
         self.embedding.weight.data.uniform_(-0.1, 0.1)
+        if config.enable_bert:
+            self.embedding.weight = bert.get_input_embeddings().weight
 
         self.dropout = nn.Dropout(p=self.dropout)
 

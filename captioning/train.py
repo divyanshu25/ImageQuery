@@ -28,7 +28,7 @@ if config.enable_wandb:
     wandb.init(project="test_ImageQuery")
 
 
-def validate(val_loader, encoder, decoder, criterion, device, vocab):
+def validate(val_loader, encoder, decoder, criterion, device, vocab, bert=None):
     vocab_size = len(vocab)
     with torch.no_grad():
         # set the evaluation mode
@@ -40,7 +40,7 @@ def validate(val_loader, encoder, decoder, criterion, device, vocab):
 >>>>>>> Beam Search for attention Model
         val_images, val_captions, _ = next(iter(val_loader))
         val_images, val_captions, caption_lengths = convert_captions(
-            val_images, val_captions, vocab, config
+            val_images, val_captions, vocab, config, bert=bert
         )
 
         if device:
@@ -73,7 +73,15 @@ def validate(val_loader, encoder, decoder, criterion, device, vocab):
 
 
 def train(
-    encoder, decoder, optimizer, criterion, train_loader, val_loader, device, vocab
+    encoder,
+    decoder,
+    optimizer,
+    criterion,
+    train_loader,
+    val_loader,
+    device,
+    vocab,
+    bert=None,
 ):
 
     vocab_size = len(vocab)
@@ -100,7 +108,7 @@ def train(
             # Obtain the batch.
             images, captions, _ = next(iter(train_loader))
             images, captions, caption_lengths = convert_captions(
-                images, captions, vocab, config
+                images, captions, vocab, config, bert
             )
             if device:
                 images = images.cuda()
@@ -143,19 +151,19 @@ def train(
                     captions.contiguous().view(-1),
                 )
 
-            if config.verbose and i_step == total_step:
-                for batch in range(min(config.batch_size, 10)):
-                    curr_pred_vec = outputs[batch, :, :]
-                    predicted_caption = torch.max(curr_pred_vec, dim=1)
-                    print(
-                        "Predicted_caption_Indices: ",
-                        clean_sentence(predicted_caption.indices.cpu().numpy(), vocab),
-                    )
-                    print(
-                        "Original Caption Indices: ",
-                        clean_sentence(captions[batch].cpu().numpy(), vocab),
-                    )
-                print("=================================")
+            # if config.verbose and i_step == total_step:
+            #     for batch in range(min(config.batch_size, 10)):
+            #         curr_pred_vec = outputs[batch, :, :]
+            #         predicted_caption = torch.max(curr_pred_vec, dim=1)
+            #         print(
+            #             "Predicted_caption_Indices: ",
+            #             clean_sentence(predicted_caption.indices.cpu().numpy(), vocab),
+            #         )
+            #         print(
+            #             "Original Caption Indices: ",
+            #             clean_sentence(captions[batch].cpu().numpy(), vocab),
+            #         )
+            #     print("=================================")
 
             # Backward pass
             loss.backward()
@@ -165,7 +173,7 @@ def train(
 
             if i_step % config.print_every == 0:
                 val_loss = validate(
-                    val_loader, encoder, decoder, criterion, device, vocab
+                    val_loader, encoder, decoder, criterion, device, vocab, bert
                 )
                 # Get training statistics.
                 stats = (

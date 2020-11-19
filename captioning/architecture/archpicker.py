@@ -24,11 +24,11 @@ from captioning.captioning_config import Config as Config
 config = Config()
 
 
-def get_encoder_decoder(embed_size, hidden_size, vocab_size):
+def get_encoder_decoder(embed_size, hidden_size, vocab_size, bert=None):
     if config.arch_name == "vanilla":
         return (EncoderCNN(embed_size), DecoderRNN(embed_size, hidden_size, vocab_size))
     elif config.arch_name == "attention":
         return (
             EncoderAttn(embed_size),
-            DecoderAttn(embed_size, hidden_size, vocab_size),
+            DecoderAttn(embed_size, hidden_size, vocab_size, bert=bert),
         )
