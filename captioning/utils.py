@@ -20,6 +20,7 @@ import numpy as np
 import nltk
 import torch
 
+
 def imshow(img, txt=None):
     img = img / 2 + 0.5  # unnormalize
     npimg = img.numpy()

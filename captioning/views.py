@@ -44,24 +44,13 @@ stopset = set(stopwords.words("english"))
     tags=["Captioning"],
 )
 class PopulateData(Resource):
-    @marshal_with(PopulateImageSchema, code=200)
-    def get(self, model_name, set):
-        if model_name not in [
-            "coco",
-            "flickr",
-            "flickr_attn",
-            "flickr_attn_bert",
-            "coco_attn",
-        ] or set not in ["test", "train", "val"]:
-            return make_response(dict(status="Invalid set or model name"), 500)
+    def initialize(self, model_set):
         config = Config()
         bert = BERT()
-        data_loader = get_data_loader(config, mode=set, type=config.dataset_type)
+        data_loader = get_data_loader(config, mode=model_set, type=config.dataset_type)
         vocab = get_vocabulary(config, type=config.dataset_type, bert=bert)
         vocab_size = len(vocab)
-
         device = get_device()
-
         encoder, decoder = get_encoder_decoder(
             config.embed_size, config.hidden_size, vocab_size, bert=bert
         )
@@ -81,15 +70,59 @@ class PopulateData(Resource):
         else:
             encoder.load_state_dict(torch.load(config.encoder_file))
             decoder.load_state_dict(torch.load(config.decoder_file))
+        return data_loader, bert, vocab, config, device, encoder, decoder
+
+    def check_db(self, image_path, model_set, caption_index=None):
+        if caption_index is None:
+            return db.session.query(
+                db.session.query(ImageCaptions)
+                .filter_by(image_path=image_path, set=model_set)
+                .exists()
+            ).scalar()
+        else:
+            return db.session.query(
+                db.session.query(ImageCaptions)
+                .filter_by(
+                    image_path=image_path, caption_index=caption_index, set=model_set
+                )
+                .exists()
+            ).scalar()
+
+    def insert_db(self, image_id, caption_index, model_set, sentence):
+        captions_obj = ImageCaptions(
+            image_path=image_id,
+            caption_index=caption_index,
+            set=model_set,
+            caption=sentence,
+        )
+        print("Inserting Prediction {}, {}".format(image_id, caption_index))
+        db.session.add(captions_obj)
+        db.session.commit()
+
+    @marshal_with(PopulateImageSchema, code=200)
+    def get(self, model_name, set):
+        if model_name not in [
+            "coco",
+            "flickr",
+            "flickr_attn",
+            "flickr_attn_bert",
+            "coco_attn",
+        ] or set not in ["test", "train", "val"]:
+            return make_response(dict(status="Invalid set or model name"), 500)
+
+        data_loader, bert, vocab, config, device, encoder, decoder = self.initialize(
+            set
+        )
+        model_set = f"{model_name}_{set}"
 
         total_step = math.ceil(
             len(data_loader.dataset) / data_loader.batch_sampler.batch_size
         )
         print("Total Steps: {}".format(total_step))
+
         try:
-            for i in range(total_step):
-                print("step: {}".format(i))
-                images, captions, image_ids = next(iter(data_loader))
+            for batch_index, (images, captions, image_ids) in enumerate(data_loader):
+                print("step: {}".format(batch_index))
                 images, encoded_captions, caption_lengths = convert_captions(
                     images, captions, vocab, config, bert=bert
                 )
@@ -97,87 +130,43 @@ class PopulateData(Resource):
                     images = images.cuda()
 
                 if "flickr" in model_name:
-                    num_captions = 1
-                    if captions is not None:
-                        captions = [captions]
-                else:
-                    num_captions = 5
+                    captions = [captions]
 
-                for k in range(images.shape[0]):
-                    image = images[k].unsqueeze(0)
+                for img_index in range(images.shape[0]):
+                    image = images[img_index].unsqueeze(0)
                     output = beam_search(encoder, decoder, image)
-                    # image_id = image_ids[k].split("#")[0]
+
                     if "flickr" in model_name:
-                        image_id = image_ids[k].split("#")[0]
+                        image_id = image_ids[img_index].split("#")[0]
                     else:
-                        image_id = image_ids[k].item()
-                    if not db.session.query(
-                        db.session.query(ImageCaptions)
-                        .filter_by(
-                            image_path=image_id, set="{}_{}".format(model_name, set)
-                        )
-                        .exists()
-                    ).scalar():
+                        image_id = image_ids[img_index].item()
+
+                    if not self.check_db(image_id, model_set):
                         for index, beam in enumerate(output):
-                            sentence = clean_sentence(beam, vocab, bert=bert, use_bert=config.enable_bert)
+                            sentence = clean_sentence(
+                                beam, vocab, bert=bert, use_bert=config.enable_bert
+                            )
                             caption_index = str(index + 5)
-                            captions_obj = ImageCaptions(
-                                image_path=image_id,
-                                caption_index=caption_index,
-                                set="{}_{}".format(model_name, set),
-                                caption=sentence,
-                            )
-                            print(
-                                "Inserting Prediction {}, {}".format(
-                                    image_id, caption_index
-                                )
-                            )
-                            db.session.add(captions_obj)
-                            db.session.commit()
+                            self.insert_db(image_id, caption_index, model_set, sentence)
+
                     else:
                         print("Already Exist: {}".format(image_id))
 
-                    if captions is not None:
-                        for i in range(num_captions):
-                            sentence = captions[i][k]
-                            # print(caption)
-                            # sentence = clean_sentence(caption.cpu().numpy(), vocab)
-                            if model_name == "flickr":
-                                caption_index = image_ids[k].split("#")[1]
-                            else:
-                                caption_index = i
+                    for cap_index in range(len(captions)):
+                        sentence = captions[cap_index][img_index]
+                        if "flickr" in model_name:
+                            caption_index = image_ids[img_index].split("#")[1]
+                        else:
+                            caption_index = cap_index
 
-                            if not db.session.query(
-                                db.session.query(ImageCaptions)
-                                .filter_by(
-                                    image_path=image_id,
-                                    caption_index=caption_index,
-                                    set="{}_{}".format(model_name, set),
-                                )
-                                .exists()
-                            ).scalar():
-                                captions_obj = ImageCaptions(
-                                    image_path=image_id,
-                                    caption_index=caption_index,
-                                    set="{}_{}".format(model_name, set),
-                                    caption=sentence,
-                                )
-                                print(
-                                    "Inserting Prediction {}, {}".format(
-                                        image_id, caption_index
-                                    )
-                                )
-                                db.session.add(captions_obj)
-                                db.session.commit()
-                            else:
-                                print(
-                                    "Alredy Exist: {}, {}".format(
-                                        image_id, caption_index
-                                    )
-                                )
+                        if not self.check_db(image_id, model_set, caption_index):
+                            self.insert_db(image_id, caption_index, model_set, sentence)
+                        else:
+                            print(
+                                "Already Exist: {}, {}".format(image_id, caption_index)
+                            )
             return make_response(dict(status="Data Upload Success"), 200)
         except Exception as e:
-            print(e)
             print(traceback.print_stack(e))
             return make_response(dict(status="Data Upload Failed"), 500)
 
@@ -227,8 +216,6 @@ class ComputeBleu(Resource):
             for caption in v:
                 candidate_corpus.append(caption)
                 reference_corpus.append(original_captions[k])
-        # print(candidate_corpus)
-        # print(reference_corpus)
         score = bleu_score(
             candidate_corpus,
             reference_corpus,
@@ -249,7 +236,8 @@ class SearchImage(Resource):
         config = Config()
 
         if (
-            model_name not in ["coco", "flickr", "flickr_attn", "flickr_attn_bert", "coco_attn"]
+            model_name
+            not in ["coco", "flickr", "flickr_attn", "flickr_attn_bert", "coco_attn"]
             or set not in ["test", "train", "val"]
             or filter not in ["True", "False"]
         ):
