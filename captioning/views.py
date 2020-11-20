@@ -33,6 +33,7 @@ import torch
 from torchtext.data.metrics import bleu_score
 from captioning.utils import convert_captions, clean_sentence
 import sys
+from bert.bert_encoder import BERT
 
 stopset = set(stopwords.words("english"))
 
@@ -49,18 +50,20 @@ class PopulateData(Resource):
             "coco",
             "flickr",
             "flickr_attn",
+            "flickr_attn_bert",
             "coco_attn",
         ] or set not in ["test", "train", "val"]:
             return make_response(dict(status="Invalid set or model name"), 500)
         config = Config()
+        bert = BERT()
         data_loader = get_data_loader(config, mode=set, type=config.dataset_type)
-        vocab = get_vocabulary(config, type=config.dataset_type)
+        vocab = get_vocabulary(config, type=config.dataset_type, bert=bert)
         vocab_size = len(vocab)
 
         device = get_device()
 
         encoder, decoder = get_encoder_decoder(
-            config.embed_size, config.hidden_size, vocab_size
+            config.embed_size, config.hidden_size, vocab_size, bert=bert
         )
         if device:
             encoder = encoder.cuda()
@@ -88,7 +91,7 @@ class PopulateData(Resource):
                 print("step: {}".format(i))
                 images, captions, image_ids = next(iter(data_loader))
                 images, encoded_captions, caption_lengths = convert_captions(
-                    images, captions, vocab, config
+                    images, captions, vocab, config, bert=bert
                 )
                 if device:
                     images = images.cuda()
@@ -116,7 +119,7 @@ class PopulateData(Resource):
                         .exists()
                     ).scalar():
                         for index, beam in enumerate(output):
-                            sentence = clean_sentence(beam, vocab)
+                            sentence = clean_sentence(beam, vocab, bert=bert, use_bert=config.enable_bert)
                             caption_index = str(index + 5)
                             captions_obj = ImageCaptions(
                                 image_path=image_id,
@@ -143,8 +146,6 @@ class PopulateData(Resource):
                                 caption_index = image_ids[k].split("#")[1]
                             else:
                                 caption_index = i
-                            # sentence = clean_sentence(captions[k].cpu().numpy(), vocab)
-                            # caption_index = image_ids[k].split("#")[1]
 
                             if not db.session.query(
                                 db.session.query(ImageCaptions)
@@ -191,6 +192,7 @@ class ComputeBleu(Resource):
             "coco",
             "flickr",
             "flickr_attn",
+            "flickr_attn_bert",
             "coco_attn",
         ] or set not in ["test", "train", "val"]:
             return make_response(dict(status="Invalid set or model name"), 500)
@@ -247,7 +249,7 @@ class SearchImage(Resource):
         config = Config()
 
         if (
-            model_name not in ["coco", "flickr", "flickr_attn", "coco_attn"]
+            model_name not in ["coco", "flickr", "flickr_attn", "flickr_attn_bert", "coco_attn"]
             or set not in ["test", "train", "val"]
             or filter not in ["True", "False"]
         ):

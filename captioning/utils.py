@@ -28,17 +28,6 @@ def imshow(img, txt=None):
     plt.show()
 
 
-def display_image(images, labels, data_loader):
-    # for l in labels:
-    # print(l)
-    for i in range(Config.batch_size):
-        desc = clean_sentence(labels[i], data_loader)
-        imshow(images[i], txt=desc)
-
-    # show image
-    # imshow(torchvision.utils.make_grid(images))
-
-
 def clean_sentence(output, vocab, bert=None, use_bert=False):
     # output = output.numpy()
     words_sequence = []

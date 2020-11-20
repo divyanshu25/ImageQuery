@@ -76,10 +76,10 @@ class Config(Flickr_Config, COCO_Config):
         self.encoder_prefix = "encoder_flickr_attn_bert"
         self.decoder_prefix = "decoder_flickr_attn_bert"
         self.encoder_file = os.path.join(
-            self.models_dir, "{}-4.pth".format(self.encoder_prefix)
+            self.models_dir, "{}-19.pth".format(self.encoder_prefix)
         )
         self.decoder_file = os.path.join(
-            self.models_dir, "{}-4.pth".format(self.decoder_prefix)
+            self.models_dir, "{}-19.pth".format(self.decoder_prefix)
         )
         self.vocab_file = os.path.join(
             self.data_dir, "vocab_{}.pkl".format(self.dataset_type)
