@@ -27,11 +27,16 @@ def beam_search(encoder, decoder, image):
     max_len = config.max_length
     encoder_out = encoder(image)
     encoder_out, state = decoder.init_search(encoder_out)
+    device = torch.cuda.is_available()
+    init_word = torch.LongTensor([[0]])
+    if device:
+        init_word = init_word.cuda()
+
     sequences = [
-        [0.0, torch.LongTensor([[0]]), [0], state]
+        [0.0, init_word, [0], state]
     ]  # [Value, curr_word, output_sentence, states]
     if config.arch_name == "vanilla":
-        sequences = [[0.0, torch.LongTensor([[0]]), [], state]]
+        sequences = [[0.0, init_word, [], state]]
     finished_beams = []
     best_so_far = 0.0
 
@@ -45,28 +50,27 @@ def beam_search(encoder, decoder, image):
             topk_picks_indices = topk_picks[1].squeeze()
             for ix, val in zip(topk_picks_indices, topk_picks_values):
                 current_beam = []
+                next_word = torch.LongTensor([ix])
+                if device:
+                    next_word = next_word.cuda()
                 current_beam.extend(
                     [
                         s[0] + val.item(),
-                        torch.LongTensor([ix]),
+                        next_word,
                         s[2] + [ix.item()],
                         state,
                     ]
                 )
+                end_token = 1
                 if config.enable_bert:
-                    if ix.item() == 102:
-                        finished_beams.append(current_beam)
-                        if best_so_far < current_beam[0]:
-                            best_so_far = current_beam[0]
-                    else:
-                        expanded_beams.append(current_beam)
+                    end_token = 102
+
+                if ix.item() == end_token:
+                    finished_beams.append(current_beam)
+                    if best_so_far < current_beam[0]:
+                        best_so_far = current_beam[0]
                 else:
-                    if ix.item() == 1:
-                        finished_beams.append(current_beam)
-                        if best_so_far < current_beam[0]:
-                            best_so_far = current_beam[0]
-                    else:
-                        expanded_beams.append(current_beam)
+                    expanded_beams.append(current_beam)
 
         ordered = sorted(expanded_beams, key=lambda tup: tup[0])[::-1]
         sequences = ordered[:beam_size]
