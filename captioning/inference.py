@@ -53,12 +53,21 @@ def beam_search(encoder, decoder, image):
                         state,
                     ]
                 )
-                if ix.item() == 1:
-                    finished_beams.append(current_beam)
-                    if best_so_far < current_beam[0]:
-                        best_so_far = current_beam[0]
+                if config.enable_bert:
+                    if ix.item() == 102:
+                        finished_beams.append(current_beam)
+                        if best_so_far < current_beam[0]:
+                            best_so_far = current_beam[0]
+                    else:
+                        expanded_beams.append(current_beam)
                 else:
-                    expanded_beams.append(current_beam)
+                    if ix.item() == 1:
+                        finished_beams.append(current_beam)
+                        if best_so_far < current_beam[0]:
+                            best_so_far = current_beam[0]
+                    else:
+                        expanded_beams.append(current_beam)
+
 
         ordered = sorted(expanded_beams, key=lambda tup: tup[0])[::-1]
         sequences = ordered[:beam_size]
@@ -82,4 +91,4 @@ def get_predict(images, encoder, decoder, vocab, captions=None, bert=None):
             print(
                 "Original Caption: " + clean_sentence(captions[i].cpu().numpy().tolist(), vocab, bert=bert, use_bert=config.enable_bert)
             )
-        imshow(image[0])
+        # imshow(image[0])
