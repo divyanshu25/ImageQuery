@@ -68,7 +68,6 @@ def beam_search(encoder, decoder, image):
                     else:
                         expanded_beams.append(current_beam)
 
-
         ordered = sorted(expanded_beams, key=lambda tup: tup[0])[::-1]
         sequences = ordered[:beam_size]
 
@@ -89,6 +88,12 @@ def get_predict(images, encoder, decoder, vocab, captions=None, bert=None):
             print("Predicted Caption {}: ".format(index) + str(sentence))
         if captions is not None:
             print(
-                "Original Caption: " + clean_sentence(captions[i].cpu().numpy().tolist(), vocab, bert=bert, use_bert=config.enable_bert)
+                "Original Caption: "
+                + clean_sentence(
+                    captions[i].cpu().numpy().tolist(),
+                    vocab,
+                    bert=bert,
+                    use_bert=config.enable_bert,
+                )
             )
         # imshow(image[0])
