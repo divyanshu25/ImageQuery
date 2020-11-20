@@ -87,7 +87,9 @@ class Config(Flickr_Config, COCO_Config):
         self.batch_size = 128  # batch size
         self.vocab_threshold = 5  # minimum word count threshold
         self.vocab_from_file = True  # if True, load existing vocab file
-        self.embed_size = 768  # dimensionality of image and word embeddings
+        self.embed_size = 512  # dimensionality of image and word embeddings[512 or 768]
+        if self.enable_bert:
+            self.embed_size = 768
         self.hidden_size = 512  # number of features in hidden state of the RNN decoder
         self.epoch_range = range(1, 20)  # number of training epochs
         self.save_every = 1  # determines frequency of saving model weights
