@@ -34,10 +34,6 @@ def validate(val_loader, encoder, decoder, criterion, device, vocab, bert=None):
         # set the evaluation mode
         encoder.eval()
         decoder.eval()
-<<<<<<< HEAD
-
-=======
->>>>>>> Beam Search for attention Model
         val_images, val_captions, _ = next(iter(val_loader))
         val_images, val_captions, caption_lengths = convert_captions(
             val_images, val_captions, vocab, config, bert=bert
