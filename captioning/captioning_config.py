@@ -96,8 +96,8 @@ class Config(Flickr_Config, COCO_Config):
         self.print_every = 10  # determines window for printing average loss
         self.num_workers = 0
         self.load_from_file = False
-        self.run_training = False
-        self.run_prediction = True
+        self.run_training = True
+        self.run_prediction = False
         self.learning_rate = 0.001
         self.scheduler_gamma = 0.95
         self.momentum = 0.9

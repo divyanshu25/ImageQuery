@@ -79,11 +79,22 @@ def get_flickr_data_loader(config, flickr_ann_dict, mode="train"):
 
     """Load and normalizing the CIFAR10 training and test datasets using torchvision"""
 
-    transform = transforms.Compose(
+    train_val_transform = transforms.Compose(
         [
             torchvision.transforms.Resize(256),
             torchvision.transforms.CenterCrop(224),
             transforms.RandomHorizontalFlip(),
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize(
+                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+            ),
+        ]
+    )
+
+    test_transform = transforms.Compose(
+        [
+            torchvision.transforms.Resize(256),
+            torchvision.transforms.CenterCrop(224),
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(
                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
@@ -100,7 +111,7 @@ def get_flickr_data_loader(config, flickr_ann_dict, mode="train"):
             mode="train",
             batch_size=config.batch_size,
             ann_dict=flickr_ann_dict,
-            transform=transform,
+            transform=train_val_transform,
         )
         if config.flickr_subsample:
             indices = range(0, config.flickr_subset_size_train)
@@ -120,13 +131,13 @@ def get_flickr_data_loader(config, flickr_ann_dict, mode="train"):
             mode="test",
             batch_size=config.batch_size,
             ann_dict=flickr_ann_dict,
-            transform=transform,
+            transform=test_transform,
         )
         data_loader = torch.utils.data.DataLoader(
             dataset,
             batch_size=config.batch_size,
             num_workers=config.num_workers,
-            shuffle=True,
+            shuffle=False,
         )
     elif mode == "val":
         dataset = Flickr8kCustom(
@@ -135,7 +146,7 @@ def get_flickr_data_loader(config, flickr_ann_dict, mode="train"):
             mode="val",
             batch_size=config.batch_size,
             ann_dict=flickr_ann_dict,
-            transform=transform,
+            transform=train_val_transform,
         )
         if config.flickr_subsample:
             indices = range(0, config.flickr_subset_size_val)
