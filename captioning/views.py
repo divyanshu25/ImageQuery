@@ -34,6 +34,7 @@ from torchtext.data.metrics import bleu_score
 from captioning.utils import convert_captions, clean_sentence
 import sys
 from bert.bert_encoder import BERT
+import torch.nn.functional as F
 
 stopset = set(stopwords.words("english"))
 
@@ -231,10 +232,30 @@ class ComputeBleu(Resource):
     tags=["Captioning"],
 )
 class SearchImage(Resource):
+    def get_embedding_layer(self, config, vocab_size, bert=None):
+        encoder, decoder = get_encoder_decoder(
+            config.embed_size, config.hidden_size, vocab_size, bert
+        )
+        if not torch.cuda.is_available():
+            decoder.load_state_dict(
+                torch.load(config.decoder_file, map_location=torch.device("cpu"))
+            )
+        else:
+            decoder.load_state_dict(torch.load(config.decoder_file))
+
+        return decoder.embedding
+
+    def get_token_ids(self, query, vocab, is_filter=False):
+        caption = []
+        tokens = self.filter_stopwords(
+            nltk.tokenize.word_tokenize(str(query).lower()), is_filter
+        )
+        # print(f"Tokens after stop word removal: {tokens}")
+        caption.extend([vocab(token) for token in tokens])
+        return torch.tensor(caption)
+
     @marshal_with(PopulateSearchSchema, code=200)
     def get(self, model_name, set, bleu_index, filter, query):
-        config = Config()
-
         if (
             model_name
             not in ["coco", "flickr", "flickr_attn", "flickr_attn_bert", "coco_attn"]
@@ -243,43 +264,56 @@ class SearchImage(Resource):
         ):
             return make_response(dict(status="Invalid set or model name"), 500)
 
+        config = Config()
+        vocab = get_vocabulary(config, type=config.dataset_type, bert=None)
+        embedding_layer = self.get_embedding_layer(config, len(vocab))
+
         data = (
             db.session.query(ImageCaptions)
             .filter_by(set="{}_{}".format(model_name, set))
             .all()
         )
+
         similarity_scores = {}
         for index, d in enumerate(data):
             caption_index = d.caption_index
             if caption_index >= 5:
                 unpadded_caption = d.caption.rstrip(" .")
                 unpadded_caption += " ."
-                bleu_sc = [
-                    [
-                        bleu_score(
-                            [
-                                self.filter_stopwords(
-                                    nltk.tokenize.word_tokenize(query), filter
-                                )
-                            ],
-                            [
-                                [
-                                    self.filter_stopwords(
-                                        nltk.tokenize.word_tokenize(unpadded_caption),
-                                        filter,
-                                    )
-                                ]
-                            ],
-                            max_n=bleu_index,
-                            weights=[1.0 / bleu_index] * bleu_index,
-                        )
-                    ]
-                ]
+                # print(f"Query: {query}, Caption: {unpadded_caption}")
+                token_id_query = self.get_token_ids(query, vocab, filter)
+                token_id_caption = self.get_token_ids(unpadded_caption, vocab, filter)
+                # print(f"Query_token_id: {token_id_query}, Caption_token_id: {token_id_caption}")
+                # print(f"Query_token_em: {embedding_layer(token_id_query).shape}, Caption_token_em: {embedding_layer(token_id_caption).shape}")
+                # print(f"Query_token_norm: {torch.norm(embedding_layer(token_id_query), p=2, dim=1).shape}, "
+                #       f"Caption_token_norm: {torch.norm(embedding_layer(token_id_caption), p=2, dim=1).shape}")
+                query_embedding = embedding_layer(token_id_query) / torch.norm(
+                    embedding_layer(token_id_query), p=2, dim=1
+                ).unsqueeze(1)
+                caption_embedding = embedding_layer(token_id_caption) / torch.norm(
+                    embedding_layer(token_id_caption), p=2, dim=1
+                ).unsqueeze(1)
+                # similarity_val = torch.mean(
+                #     torch.max(
+                #         F.relu(torch.matmul(caption_embedding, query_embedding.t())), dim=1
+                #     ).values
+                # )
+                # similarity_val = torch.mean(
+                #     torch.max(
+                #         torch.matmul(caption_embedding, query_embedding.t()), dim=1
+                #     ).values
+                # )
+                # similarity_val = torch.mean(
+                #         F.relu(torch.matmul(caption_embedding, query_embedding.t()))
+                # )
 
+                similarity_val = torch.mean(
+                        torch.matmul(caption_embedding, query_embedding.t())
+                )
                 if d.image_path not in similarity_scores:
                     similarity_scores[d.image_path] = 0
                 similarity_scores[d.image_path] = max(
-                    bleu_sc[0][0], similarity_scores[d.image_path]
+                    similarity_val, similarity_scores[d.image_path]
                 )
         sorted_dict = {
             k: v
@@ -287,11 +321,11 @@ class SearchImage(Resource):
                 similarity_scores.items(), key=lambda item: item[1], reverse=True
             )
         }
-        # print(sorted_dict)
+        print(sorted_dict)
         list_images = []
         count = 0
         for k, v in sorted_dict.items():
-            print(f"BleuScore for Image: {k} is {v}")
+            print(f"SimilarityScore for Image: {k} is {v}")
             sys.stdout.flush()
             list_images.append(k)
             count += 1
