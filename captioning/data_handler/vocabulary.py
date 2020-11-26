@@ -58,6 +58,7 @@ class Vocabulary(object):
                 vocab = pickle.load(f)
                 self.word2idx = vocab.word2idx
                 self.idx2word = vocab.idx2word
+                self.frequency = vocab.frequency
             self.idx = len(self.word2idx)
             print(
                 "Vocabulary successfully loaded from {} file!".format(self.vocab_file)
@@ -81,6 +82,7 @@ class Vocabulary(object):
         """Initialize the dictionaries for converting tokens to integers (and vice-versa)."""
         self.word2idx = {}
         self.idx2word = {}
+        self.frequency = Counter()
         self.idx = 0
 
     def add_word(self, word):
@@ -88,22 +90,22 @@ class Vocabulary(object):
         if not word in self.word2idx:
             self.word2idx[word] = self.idx
             self.idx2word[self.idx] = word
+
             self.idx += 1
 
     def add_captions(self, ann_dict):
         """Loop over training captions and add all tokens to the vocabulary that meet or exceed the threshold."""
         # ann_dict = parse_flickr(self.annotations_file)
-        counter = Counter()
+
         ids = ann_dict.keys()
         for i, id in enumerate(ids):
             caption = str(ann_dict[id])
             tokens = nltk.tokenize.word_tokenize(caption.lower())
-            counter.update(tokens)
+            self.frequency.update(tokens)
 
             if i % 1000 == 0:
                 print("[%d/%d] Tokenizing captions..." % (i, len(ids)))
-
-        words = [word for word, cnt in counter.items() if cnt >= self.vocab_threshold]
+        words = [word for word, cnt in self.frequency.items() if cnt >= self.vocab_threshold]
         # print(words)
 
         for i, word in enumerate(words):

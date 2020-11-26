@@ -44,7 +44,7 @@ class BleuScoreSchema(Schema):
         strict = True
 
 
-class PopulateSearchSchema(Schema):
+class SearchSchema(Schema):
     status = fields.Str(
         required=True, validate=validate.OneOf(["Invalid set or model name"])
     )

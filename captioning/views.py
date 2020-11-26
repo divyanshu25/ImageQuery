@@ -23,7 +23,7 @@ from flask import make_response, request
 from flask_apispec import marshal_with, doc, use_kwargs
 from flask_apispec import MethodResource as Resource
 from captioning.architecture.archpicker import get_encoder_decoder
-from captioning.schema import PopulateImageSchema, BleuScoreSchema, PopulateSearchSchema
+from captioning.schema import PopulateImageSchema, BleuScoreSchema, SearchSchema
 from captioning.captioning_config import Config
 from captioning.data_handler.data_loader import get_data_loader, get_vocabulary
 from captioning.main import get_device
@@ -248,20 +248,26 @@ class SearchImage(Resource):
 
     def get_token_ids(self, query, vocab, is_filter=False, bert=None):
         caption = []
+        importance = []
         tokens = self.filter_stopwords(
             nltk.tokenize.word_tokenize(str(query).lower()), is_filter
         )
-        # print(f"Tokens after stop word removal: {tokens}")
         if config.enable_bert:
             tokenizer = bert.get_tokenizer()
             caption.extend(
                 [tokenizer.convert_tokens_to_ids(token) for token in tokens]
             )
         else:
+            for token in tokens:
+                if token not in vocab.frequency.keys():
+                    importance.append(0.0)
+                else:
+                    importance.append(1.0/vocab.frequency[token])
             caption.extend([vocab(token) for token in tokens])
-        return torch.tensor(caption)
 
-    @marshal_with(PopulateSearchSchema, code=200)
+        return torch.tensor(caption), importance
+
+    @marshal_with(SearchSchema, code=200)
     def get(self, model_name, set, bleu_index, filter, query):
         if (
             model_name
@@ -275,7 +281,6 @@ class SearchImage(Resource):
         bert = BERT()
         vocab = get_vocabulary(config, type=config.dataset_type, bert=bert)
         embedding_layer = self.get_embedding_layer(config, len(vocab), bert=bert)
-
         data = (
             db.session.query(ImageCaptions)
             .filter_by(set="{}_{}".format(model_name, set))
@@ -288,47 +293,44 @@ class SearchImage(Resource):
             if caption_index >= 5:
                 unpadded_caption = d.caption.rstrip(" .")
                 unpadded_caption += " ."
-                # print(f"Query: {query}, Caption: {unpadded_caption}")
-                token_id_query = self.get_token_ids(query, vocab, filter, bert=bert)
-                token_id_caption = self.get_token_ids(unpadded_caption, vocab, filter, bert=bert)
-                # print(f"Query_token_id: {token_id_query}, Caption_token_id: {token_id_caption}")
-                # print(f"Query_token_em: {embedding_layer(token_id_query).shape}, Caption_token_em: {embedding_layer(token_id_caption).shape}")
-                # print(f"Query_token_norm: {torch.norm(embedding_layer(token_id_query), p=2, dim=1).shape}, "
-                #       f"Caption_token_norm: {torch.norm(embedding_layer(token_id_caption), p=2, dim=1).shape}")
+                token_id_query, importance = self.get_token_ids(query, vocab, filter, bert=bert)
+                token_id_caption, _ = self.get_token_ids(unpadded_caption, vocab, filter, bert=bert)
+                print(importance)
                 query_embedding = embedding_layer(token_id_query) / torch.norm(
                     embedding_layer(token_id_query), p=2, dim=1
                 ).unsqueeze(1)
                 caption_embedding = embedding_layer(token_id_caption) / torch.norm(
                     embedding_layer(token_id_caption), p=2, dim=1
                 ).unsqueeze(1)
-                # similarity_val = torch.mean(
+                # similarity_val = torch.sum(
                 #     torch.max(
-                #         F.relu(torch.matmul(caption_embedding, query_embedding.t())), dim=1
-                #     ).values
+                #         F.relu(torch.matmul(query_embedding, caption_embedding.t())), dim=1
+                #     ).values * torch.tensor(importance)
                 # )
+                similarity_val = torch.sum(
+                    torch.max(
+                        torch.matmul(query_embedding, caption_embedding.t()), dim=1
+                    ).values * torch.tensor(importance)
+                )
+
                 # similarity_val = torch.mean(
-                #     torch.max(
-                #         torch.matmul(caption_embedding, query_embedding.t()), dim=1
-                #     ).values
+                #     torch.matmul(query_embedding, caption_embedding.t())* torch.tensor(importance).unsqueeze(1)
                 # )
+
                 # similarity_val = torch.mean(
                 #         F.relu(torch.matmul(caption_embedding, query_embedding.t()))
                 # )
-                mml = torch.matmul(caption_embedding, query_embedding.t())
-                _, S, _ = torch.svd(mml)
-                similarity_val = S[0]
                 if d.image_path not in similarity_scores:
                     similarity_scores[d.image_path] = 0
-                similarity_scores[d.image_path] = max(
-                    similarity_val, similarity_scores[d.image_path]
-                )
+                similarity_scores[d.image_path] = max(similarity_val , similarity_scores[d.image_path])
+
         sorted_dict = {
             k: v
             for k, v in sorted(
                 similarity_scores.items(), key=lambda item: item[1], reverse=True
             )
         }
-        print(sorted_dict)
+        # print(sorted_dict)
         list_images = []
         count = 0
         for k, v in sorted_dict.items():
