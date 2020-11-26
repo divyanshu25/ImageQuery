@@ -14,6 +14,7 @@
 #   limitations under the License.
 #   ==================================================================
 import math
+import pickle
 import traceback
 import nltk
 
@@ -252,18 +253,26 @@ class SearchImage(Resource):
         tokens = self.filter_stopwords(
             nltk.tokenize.word_tokenize(str(query).lower()), is_filter
         )
+
+        frequency = None
         if config.enable_bert:
+            with open(config.vocab_file, "rb") as f:
+                vocab = pickle.load(f)
+                frequency = vocab.frequency
+
             tokenizer = bert.get_tokenizer()
             caption.extend(
                 [tokenizer.convert_tokens_to_ids(token) for token in tokens]
             )
         else:
-            for token in tokens:
-                if token not in vocab.frequency.keys():
-                    importance.append(0.0)
-                else:
-                    importance.append(1.0/vocab.frequency[token])
+            frequency = vocab.frequency
             caption.extend([vocab(token) for token in tokens])
+
+        for token in tokens:
+            if token not in frequency.keys():
+                importance.append(0.0)
+            else:
+                importance.append(1.0/frequency[token])
 
         return torch.tensor(caption), importance
 
@@ -322,7 +331,7 @@ class SearchImage(Resource):
                 # )
                 if d.image_path not in similarity_scores:
                     similarity_scores[d.image_path] = 0
-                similarity_scores[d.image_path] = max(similarity_val , similarity_scores[d.image_path])
+                similarity_scores[d.image_path] = similarity_val + similarity_scores[d.image_path]
 
         sorted_dict = {
             k: v
