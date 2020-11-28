@@ -15,7 +15,7 @@
 #   ==================================================================
 from flask import Blueprint, request, make_response
 from flask_restful import Api
-from captioning.views import PopulateData, ComputeBleu, SearchImage
+from captioning.views import PopulateData, ComputeBleu, SearchImage, SearchByImage
 
 captioning_bp = Blueprint("captioning", __name__, url_prefix="/")
 api = Api(captioning_bp)
@@ -33,8 +33,14 @@ api.add_resource(
     endpoint="search",
 )
 
+api.add_resource(
+    SearchByImage,
+    "searchbyimage/<string:model_name>/<string:set>/<int:bleu_index>/<string:filter>/<string:image_path>",
+    endpoint="searchByImage",
+)
 
 def register_captioning_in_docs(docs):
     docs.register(PopulateData, endpoint="captioning.populate")
     docs.register(ComputeBleu, endpoint="captioning.bleu")
     docs.register(SearchImage, endpoint="captioning.search")
+    docs.register(SearchByImage, endpoint="captioning.searchByImage")
