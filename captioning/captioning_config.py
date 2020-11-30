@@ -73,6 +73,9 @@ class Config(Flickr_Config, COCO_Config):
 
     def __init__(self):
         super(Config, self).__init__()
+        self.image_search_dir = os.path.join(
+            self.data_dir, "imagesearch"
+        )
         self.encoder_prefix = "encoder_flickr_attn_bert"
         self.decoder_prefix = "decoder_flickr_attn_bert"
         self.encoder_file = os.path.join(
