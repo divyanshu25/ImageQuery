@@ -308,7 +308,6 @@ class SearchImage(Resource):
                 unpadded_caption += " ."
                 token_id_query, importance = self.get_token_ids(query, vocab, filter, bert=bert)
                 token_id_caption, _ = self.get_token_ids(unpadded_caption, vocab, filter, bert=bert)
-                print(importance)
                 query_embedding = embedding_layer(token_id_query) / torch.norm(
                     embedding_layer(token_id_query), p=2, dim=1
                 ).unsqueeze(1)
@@ -465,7 +464,7 @@ class SearchByImage(Resource):
             return image
 
         config = Config()
-        image_path = os.path.join(config.images_dir, image_path)
+        image_path = os.path.join(config.image_search_dir, image_path)
         print(image_path)
 
         data_loader, bert, vocab, config, device, encoder, decoder = self.initialize(
@@ -486,7 +485,7 @@ class SearchByImage(Resource):
             sentence = clean_sentence(s, vocab, bert=bert, use_bert=config.enable_bert)
             print("Predicted Caption {}: ".format(index) + str(sentence))
 
-        query = clean_sentence(output[0], vocab, bert=bert, use_bert=config.enable_bert)
+        query = clean_sentence(output[2], vocab, bert=bert, use_bert=config.enable_bert)
         print(f"query: {query}")
 
         data = (
