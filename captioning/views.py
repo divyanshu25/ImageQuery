@@ -40,6 +40,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 from PIL import Image
 import os
+import requests, json
 
 stopset = set(stopwords.words("english"))
 
@@ -294,12 +295,12 @@ class SearchImage(Resource):
         bert = BERT()
         vocab = get_vocabulary(config, type=config.dataset_type, bert=bert)
         embedding_layer = self.get_embedding_layer(config, len(vocab), bert=bert)
+
         data = (
             db.session.query(ImageCaptions)
             .filter_by(set="{}_{}".format(model_name, set))
             .all()
         )
-
         similarity_scores = {}
         for index, d in enumerate(data):
             caption_index = d.caption_index
@@ -474,7 +475,8 @@ class SearchByImage(Resource):
         model_set = f"{model_name}_{set}"
         image = image_loader(image_path)
         vocab = get_vocabulary(config, type=config.dataset_type, bert=bert)
-        embedding_layer = self.get_embedding_layer(config, len(vocab), bert=bert)
+        # embedding_layer = self.get_embedding_layer(config, len(vocab), bert=bert)
+        embedding_layer = decoder.embedding
         device = get_device()
 
         if device:
@@ -485,54 +487,14 @@ class SearchByImage(Resource):
             sentence = clean_sentence(s, vocab, bert=bert, use_bert=config.enable_bert)
             print("Predicted Caption {}: ".format(index) + str(sentence))
 
-        query = clean_sentence(output[2], vocab, bert=bert, use_bert=config.enable_bert)
+        query = clean_sentence(output[0], vocab, bert=bert, use_bert=config.enable_bert)
         print(f"query: {query}")
 
-        data = (
-            db.session.query(ImageCaptions)
-            .filter_by(set="{}_{}".format(model_name, set))
-            .all()
-        )
+        url = f"http://0.0.0.0:5000/search/{model_name}/{set}/{bleu_index}/{filter}/{query.replace(' ', '%20')}"
+        response = requests.get(url)
+        json_resp = json.loads(response.text)
+        list_images = [im.strip("\"\'\[\]") for im in json_resp["image_ids"].split(', ')]
 
-        similarity_scores = {}
-        for index, d in enumerate(data):
-            caption_index = d.caption_index
-            if caption_index >= 5:
-                unpadded_caption = d.caption.rstrip(" .")
-                unpadded_caption += " ."
-                token_id_query, importance = self.get_token_ids(query, vocab, filter, bert=bert)
-                token_id_caption, _ = self.get_token_ids(unpadded_caption, vocab, filter, bert=bert)
-                query_embedding = embedding_layer(token_id_query) / torch.norm(
-                    embedding_layer(token_id_query), p=2, dim=1
-                ).unsqueeze(1)
-                caption_embedding = embedding_layer(token_id_caption) / torch.norm(
-                    embedding_layer(token_id_caption), p=2, dim=1
-                ).unsqueeze(1)
-                similarity_val = torch.sum(
-                    torch.max(
-                        torch.matmul(query_embedding, caption_embedding.t()), dim=1
-                    ).values * torch.tensor(importance)
-                )
-
-                if d.image_path not in similarity_scores:
-                    similarity_scores[d.image_path] = 0
-                similarity_scores[d.image_path] = similarity_val + similarity_scores[d.image_path]
-
-        sorted_dict = {
-            k: v
-            for k, v in sorted(
-                similarity_scores.items(), key=lambda item: item[1], reverse=True
-            )
-        }
-        list_images = []
-        count = 0
-        for k, v in sorted_dict.items():
-            print(f"SimilarityScore for Image: {k} is {v}")
-            sys.stdout.flush()
-            list_images.append(k)
-            count += 1
-            if count == 5:
-                break
         return make_response(dict(image_ids=str(list_images)), 200)
 
     def filter_stopwords(self, tokens, filter="False"):
