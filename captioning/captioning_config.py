@@ -122,3 +122,4 @@ class Config(Flickr_Config, COCO_Config):
         self.encoded_img_size = 14                                  # Size of image to pass through attention layer.
         self.dropout = 0.5                                          # Dropout
         self.max_char_length = 150                                  # Limit of characters in a caption.
+        self.use_bleu = False                                       # Use BLEU score for similarity search. Set False to use cosine similarity.
